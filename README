@@ -6,5 +6,7 @@ Major modules:
 1. mapping reads onto human reference in batches, using BWA
 2. collecting mapping results, init GATK
 3. iterative preliminary analysis: remapping for indels, indel/SNP calling, using GATK
-4. finalize analysis using Galexy (?)
+4. finalize variant calling. Quality assessment: false positive (known SNPs %; transition/transversion)
+5. association test: (1) single variants, Fisher's exact test. (2) grouping by genes or pathways for 
+ rare and/or functional variants. Considering double hits (potentially compound heterzygosity), recessive, etc
 
