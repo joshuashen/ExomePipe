@@ -12,8 +12,8 @@
      |                               |
      |                               V
   2 bfq <---- 2 unaligned-BAM       BAM
-       GATK BamToBfq.jar             |
-                                     |GATK
+       BamToBfq.jar                  |
+                                     | ?
                                      |
 [Variant calling]                    V
                                     VCF
