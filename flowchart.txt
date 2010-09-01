@@ -1,0 +1,22 @@
+
+[Mapping] 
+
+     bwa index 
+  ref------>indexed ref------------- 
+                 |                 |
+                 |                 |
+         bwa aln V       bwa sampe V
+  2 fastq -------> 2 SAI ---------> SAM 
+     ^                               |
+     | maq bfq2fastq        samtools |
+     |                               |
+     |                               V
+  2 bfq <---- 2 unaligned-BAM       BAM
+       GATK BamToBfq.jar             |
+                                     |GATK
+                                     |
+[Variant calling]                    V
+                                    VCF
+
+
+        
