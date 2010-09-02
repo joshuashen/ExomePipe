@@ -1,4 +1,9 @@
-## mapping paired reads; one run per batch.
+## atomic mapping wrapper for Illumina/Solexa reads
+#  paired or single-end reads
+#  batch size:  single run, <100M reads.
+
+### author: Yufeng Shen, c2b2, Columbia
+
 
 require 'getoptlong'
 
@@ -18,6 +23,7 @@ def main
   
   if optHash.key?("--help")
     $stderr.puts "Usage: ruby __.rb -i foo.1.fastq [-p foo.2.fastq] [-r reference.fasta]"
+    $stderr.puts "Note: mapping paired reads requires -p argument."
     exit
   end
 
@@ -65,7 +71,7 @@ def main
 end
 
 def getPrefix(fname)
-  return File.basename(fname).match(/^(.*)\.1\.(.*)$/)[1]
+  return fname.match(/^(.*)\.1\.(.*)$/)[1]
 end
 
 main()
