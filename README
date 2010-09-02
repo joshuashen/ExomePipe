@@ -1,8 +1,6 @@
-WEPL: WGS and Exome PipeLine
-
 Computation pipeline for analyzing WGS and Exome data.
 
-Major modules:
+Major steps: 
 1. mapping reads onto human reference in batches, using BWA
 2. collecting mapping results, init GATK
 3. iterative preliminary analysis: remapping for indels, indel/SNP calling, using GATK
