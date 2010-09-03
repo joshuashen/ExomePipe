@@ -1,0 +1,16 @@
+ruby runDistributed.rb 250000000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/oneThread.out
+ruby runDistributed.rb 125000000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/twoThread.out
+ruby runDistributed.rb 83333333 /broad/hptmp/aaron/output > /broad/hptmp/aaron/threeThread.out
+ruby runDistributed.rb 62500000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/fourThread.out
+ruby runDistributed.rb 50000000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/fiveThread.out
+ruby runDistributed.rb 41666666 /broad/hptmp/aaron/output > /broad/hptmp/aaron/sixThread.out
+ruby runDistributed.rb 35714285 /broad/hptmp/aaron/output > /broad/hptmp/aaron/sevenThread.out
+ruby runDistributed.rb 31250000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/eightThread.out
+ruby runDistributed.rb 27777777 /broad/hptmp/aaron/output > /broad/hptmp/aaron/nineThread.out
+ruby runDistributed.rb 25000000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/tenThread.out
+ruby runDistributed.rb 22727272 /broad/hptmp/aaron/output > /broad/hptmp/aaron/elevenThread.out
+ruby runDistributed.rb 20833333 /broad/hptmp/aaron/output > /broad/hptmp/aaron/twelveThread.out
+ruby runDistributed.rb 15625000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/sixteenThread.out
+ruby runDistributed.rb 12500000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/twentyThread.out
+ruby runDistributed.rb 8333333 /broad/hptmp/aaron/output > /broad/hptmp/aaron/thirtyThread.out
+ruby runDistributed.rb 5000000 /broad/hptmp/aaron/output > /broad/hptmp/aaron/fiftyThread.out
