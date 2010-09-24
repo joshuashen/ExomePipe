@@ -1,0 +1,50 @@
+#!/bin/sh
+#$ -S /bin/sh
+#$ -cwd
+#$ -l h_vmem=5G,time=6::
+
+# Recalibrate called variants
+# Load all samples genome-wide in a single $INP vcf file
+
+HEAP=4000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/GenomeAnalysisTK-1.0.4168/GenomeAnalysisTK.jar"
+REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
+DBSNP="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/dbsnp_130_hg18.rod"
+
+INP=$1
+
+BINP=`ls --color=never $INP.*.snps.filtered.vcf | awk '{ print "-B:input" NR ",VCF" $1 }' | tr '\n' ' '`
+$GATK \
+ -T GenerateVariantClusters \
+ $BINP \
+ -R $REF \
+ --DBSNP $DBSNP \
+ -l INFO \
+ -an QD -an SB -an HaplotypeScore -an HRun \
+ -clusterFile $INP.cluster
+
+$GATK \
+ -T VariantRecalibrator \
+ $BINP \
+ -R $REF \
+ --DBSNP $DBSNP \
+ -l INFO \
+ --ignore_filter HARD_TO_VALIDATE \
+ -clusterFile $INP.cluster \
+ -o $INP.recalibrator_output.vcf \
+ -tranchesFile $INP.dat.tranches \
+ -reportDatFile $INP.dat \
+ --target_titv 2.07 \
+ -Rscript /ifs/data/c2b2/ip_lab/shares/SOFTWARE/R/R-2.11.1/bin/R \
+ -resources /ifs/home/c2b2/ip_lab/yshen/usr/Sting/R/
+
+$GATK \
+ -R $REF \
+ --DBSNP $DBSNP \
+ -B:input,VCF $INP.recalibrator_output.vcf \
+ -l INFO \
+ --fdr_filter_level 10.0 \
+ -tranchesFile $INP.dat.tranches \
+ -o $INP.recalibrator_output.filtered.vcf \
+ -T ApplyVariantCuts

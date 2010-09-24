@@ -1,0 +1,51 @@
+#!/bin/sh
+#$ -S /bin/sh
+#$ -cwd
+#$ -l h_vmem=5G,time=6::
+
+# Impute missing variants using BEAGLE
+# Load all samples per chromosome in a single $INP vcf file
+
+HEAP=4000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/GenomeAnalysisTK-1.0.4168/GenomeAnalysisTK.jar"
+REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
+BEAGLE=""
+
+INP=$1
+CHR=$2
+
+$GATK \
+ -L chr$CHR \
+ -T ProduceBeagleInput \
+ -R $REF \
+ -B:variant,VCF $INP.vcf \
+ -beagle $INP.input.beaglelh
+
+$JAVA -jar $BEAGLE like=$INP.beaglelh out=$INP.bgl
+gunzip -f $INP.bgl.gprobs.gz
+gunzip -f $INP.bgl.phased.gz
+mv $INP.bgl $INP.output.beaglelh
+
+$GATK \
+ -L chr$CHR \
+ -T BeagleOutputToVCF \
+ -R $REF \
+ -B:variant,VCF $INP.vcf \
+ -B:beagleR2,BEAGLE $INP.bgl.r2 \
+ -B:beaglePhased,BEAGLE $INP.bgl.phased \
+ -B:beagleProbs,BEAGLE $INP.bgl.gprobs \ 
+ --out $INP.imputed.vcf
+
+if [ -s $INP.imputed.vcf ]; then
+  rm -f $INP.bgl.r2 $INP.bgl.phased $INP.bgl.gprobs
+fi
+
+$GATK \
+ -L chr$CHR \
+ -R $REF \
+ -T VariantEval \
+ -B eval_prebeagle,VCF,$INP.vcf \
+ -B eval_beagle,VCF,$INP.imputed.vcf \
+ -reportType Grep \
+ -o $INP.imputed.eval.txt

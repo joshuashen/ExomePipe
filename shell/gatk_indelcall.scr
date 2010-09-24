@@ -1,0 +1,29 @@
+#!/bin/sh
+#$ -S /bin/sh
+#$ -cwd
+#$ -l h_vmem=5G,time=6::
+
+# Perform low-coverage indel calls
+# Load all samples from chromosome in a single $INP bam file
+
+HEAP=4000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/GenomeAnalysisTK-1.0.4168/GenomeAnalysisTK.jar"
+REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
+
+INP=$1
+CHR=$2
+
+$GATK \
+ -L chr$CHR \
+ -T IndelGenotyperV2 \
+ -R $REF \
+ -I $INP.list \
+ -bed $INP.indels.raw.bed \
+ -o $INP.indels.vcf \
+ -verbose $INP.indels.annot.vcf \
+ -minCnt 2 \
+ -minFraction 0.03 \
+ -minConsensusFraction 0.6 \
+ --refseq /ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/refseq.autosome.rod \
+ -mnr 1000000 

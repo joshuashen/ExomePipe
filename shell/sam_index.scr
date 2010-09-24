@@ -1,0 +1,7 @@
+#!/bin/sh
+#$ -S /bin/sh
+#$ -cwd
+#$ -l h_vmem=5G,time=12::
+
+INP=$1
+/ifs/data/c2b2/ip_lab/shares/SOFTWARE/samtools/samtools-0.1.7_x86_64-linux/samtools index $INP

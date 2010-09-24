@@ -1,0 +1,29 @@
+#!/bin/sh
+#$ -S /bin/sh
+#$ -cwd
+#$ -l h_vmem=5G,time=6::
+
+# Filter SNPs in indel regions
+# Load all samples from chromosome in a single $INP vcf file
+
+HEAP=4000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/GenomeAnalysisTK-1.0.4168/GenomeAnalysisTK.jar"
+REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
+
+INP=$1
+CHR=$2
+
+python /ifs/home/c2b2/ip_lab/yshen/usr/Sting/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
+
+$GATK \
+ -L chr$CHR
+ -T VariantFiltration \
+ -R $REF \
+ -o $INP.snps.filtered.vcf \
+ -B:variant,VCF $INP.snps.raw.vcf \
+ -B:mask,Bed $INP.indels.mask.bed \
+ --maskName InDel \
+ --clusterWindowSize 10 \
+ --filterExpression "MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1" \
+ --filterName "HARD_TO_VALIDATE"
