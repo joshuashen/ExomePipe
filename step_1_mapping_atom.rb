@@ -63,11 +63,25 @@ def main
     output = File.dirname(File.expand_path(f1)) + "/" +   getPrefix(File.basename(f1)) + ".aligned.bam"
     cmd = "#{bwa} sampe #{ref} #{f1}.sai #{f2}.sai #{f1} #{f2} | #{samtools} view -bS -o #{output}  - "
     system(cmd)
+    ## sort and index the BAM file
+    cmd= "#{samtools} sort #{output} #{output}.sorted"
+    system(cmd)
+    cmd = "#{samtools} index #{output}.sorted"
+    system(cmd)
   else # single reads
     output = f1 + ".bam"
     cmd = "#{bwa} samse #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
+    cmd= "#{samtools} sort #{output} #{output}.sorted"
+    system(cmd)
+    cmd = "#{samtools} index #{output}.sorted"
+    system(cmd)
   end
+end
+
+def sortAndIndex(bam)
+#
+
 end
 
 def getPrefix(fname)
