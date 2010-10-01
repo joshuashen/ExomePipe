@@ -72,6 +72,7 @@ def main
     output = f1 + ".bam"
     cmd = "#{bwa} samse #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
+# We need to make a function for this.
     cmd= "#{samtools} sort #{output} #{output}.sorted"
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted"
