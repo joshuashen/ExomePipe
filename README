@@ -1,10 +1,29 @@
 Computation pipeline for analyzing WGS and Exome data.
 
-Major steps: 
+*Major steps* 
 1. Mapping reads onto reference using BWA 
-2. (Iteratively) Calling variants using GATK
+2. Calling variants using GATK
 3. Quality assessment and functional annotation of variants 
 4. Association test (including single variants and gene-based) 
 
+*Details*
+1. Mapping
 
 
+2. Genotype calling.
+(1) local realignment: optimize alignment around short indels. 
+(2) base quality recalibration:
+(3) assess FDR of novel variants based on transition / transverion 
+
+3. Association:
+(1) Single variants: Fisher's exact test
+(2) gene-based grouping: 
+  - simple collapse of rare and uncommon variants (<5%). Count carriers or variants. then compare cases and controls
+  - stratified collapse: rare (<1%), uncommon (>1% and <5%)
+  - weighted by frequency. (Madsen and Browning)
+  - Price et al, flexible threshold for collapse, Bayesian incorperation of PolyPhen-2 scores (only applicable to missense)
+  - double hits: genes with two or more non-synonymous novel variants.
+  - c-alpha: could be useful if there are many neutral non-synonymous novel variants.
+
+ 
+ 
