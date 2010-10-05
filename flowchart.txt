@@ -12,11 +12,14 @@
      |                               |
      |                               V
   2 bfq <---- 2 unaligned-BAM       BAM
-       BamToBfq.jar                  |
-                                     | ?
-                                     |
-[Variant calling]                    V
+       BamToBfq.jar                  | GATK: 
+                                     | 0. recalibration
+[Variant calling]                    | 1. local realignment 
+                                     | 2. call indels
+                                     | 3. call SNVs
+                                     V
                                     VCF
 
 
+[Association]                        
         
