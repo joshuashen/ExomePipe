@@ -17,7 +17,7 @@ CHR=$2
 python /ifs/home/c2b2/ip_lab/yshen/usr/Sting/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
 
 $GATK \
- -L chr$CHR
+ -L chr$CHR \
  -T VariantFiltration \
  -R $REF \
  -o $INP.snps.filtered.vcf \
@@ -27,3 +27,5 @@ $GATK \
  --clusterWindowSize 10 \
  --filterExpression "MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1" \
  --filterName "HARD_TO_VALIDATE"
+
+rm $INP.indels.mask.bed* $INP.snps.raw.vcf.idx

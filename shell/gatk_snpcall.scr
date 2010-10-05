@@ -24,4 +24,4 @@ java -Xmx${HEAP}m -jar /ifs/home/c2b2/ip_lab/yshen/usr/Sting/dist/GenomeAnalysis
  -stand_call_conf 10.0 \
  -dcov 50 \
  -pl SOLID \
- -bm EMPIRICAL
+ -bm EMPIRICAL > $INP.snps.log
