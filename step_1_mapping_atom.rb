@@ -13,7 +13,8 @@ def main
      ["--reference", "-r", GetoptLong::OPTIONAL_ARGUMENT],
      ["--input", "-i", GetoptLong::REQUIRED_ARGUMENT],
      ["--pair", "-p", GetoptLong::OPTIONAL_ARGUMENT],
-     ["--help", "-h", GetoptLong::NO_ARGUMENT]
+     ["--help", "-h", GetoptLong::NO_ARGUMENT],
+     ["--bwa", "-b", GetoptLong::OPTIONAL_ARGUMENT]
   )
   
   optHash = {}
@@ -39,10 +40,14 @@ def main
   else
     f2 = nil
   end
+ 
+  if optHash.key?("--bwa")
+    bwa = File.expand_path(optHash["--bwa"])
+  else
+    bwa = "/ifs/data/c2b2/ip_lab/shares/SOFTWARE/bwa_titan/bwa"
+  end
 
-
-## todo: optionally provide bwa/samtools location through command line.
-  bwa = "/ifs/home/c2b2/ip_lab/yshen/usr/bin/bwa"
+## todo: optionally provide samtools location through command line.
   samtools = "/ifs/home/c2b2/ip_lab/yshen/usr/bin/samtools"
 
 ## todo: provide more options of bwa for fine-tuning. 
