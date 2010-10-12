@@ -1,5 +1,10 @@
 # record of logistic dealings
 
+10/12/2010: add VT Test code
+VT Test implement methods mentioned in Price et al 2010. We downloaded the R code from http://genetics.bwh.harvard.edu/rare_variants/. Note: the input requires polyphen-2 scores, which can be obtained from: http://genetics.bwh.harvard.edu/pph2/bgi.shtml 
+
+
+
 10/07/2010: update GATK to latest version
 1. do a new svn checkout (svn co https://svnrepos.broadinstitute.org/Sting/trunk Sting). "svn update" on old repository won't necessary work during compilation.  
 2. cd Sting; ant  # which is to compile
