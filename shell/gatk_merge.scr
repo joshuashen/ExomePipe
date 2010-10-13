@@ -1,0 +1,26 @@
+#!/bin/sh
+#$ -S /bin/sh
+#$ -cwd
+#$ -l h_vmem=1G,time=6::
+
+# Merge multiple VCF files into a single file
+# Pass a quoted ls style string as $1 and the output filename as $2
+# Example: bash gatk_merge.scr "test.chr*.vcf" test.all.vcf
+
+HEAP=800
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/data/c2b2/ip_lab/shares/DATA/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+REF='/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/Homo_sapiens_assembly18.fasta'
+
+INP=$1
+OUT=$2
+
+BINP=`ls --color=never $1 | awk '{ print "-B input" NR ",VCF," $1 }' | tr '\n' ' '`
+
+$GATK
+ -T CombineVariants \
+ $BINP \
+ -genotypeMergeOptions UNSORTED \
+ -variantMergeOptions UNION \
+ -R $REF \
+ -o $OUT.vcf

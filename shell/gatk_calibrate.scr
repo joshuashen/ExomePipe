@@ -8,9 +8,9 @@
 # OUTPUT:	$INP.recal_data.csv recalibrate info file
 
 HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/GenomeAnalysisTK-1.0.4168/GenomeAnalysisTK.jar"
-REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/data/c2b2/ip_lab/shares/DATA/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+REF='/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/Homo_sapiens_assembly18.fasta'
 DBSNP="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/dbsnp_130_hg18.rod"
 
 INP=$1

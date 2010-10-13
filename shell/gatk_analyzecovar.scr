@@ -7,18 +7,16 @@
 # Run with a single read-group/lane in $INP.list
 
 HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/data/c2b2/ip_lab/shares/DATA/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+REF='/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/Homo_sapiens_assembly18.fasta'
 
 INP=$1
 
 if [ ! -d ${INP}_anal ]; then mkdir ${INP}_anal; fi
 
-$JAVA -jar /ifs/home/c2b2/ip_lab/yshen/usr/Sting/dist/AnalyzeCovariates.jar \
+$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/AnalyzeCovariates.jar \
   -recalFile $INP.recal_data.csv \
   -outputDir ${INP}_anal \
   -Rscript /ifs/data/c2b2/ip_lab/shares/SOFTWARE/R/R-2.11.1/bin/R \
   -resources /ifs/home/c2b2/ip_lab/yshen/usr/Sting/R/
-
-# Run again on updated data
-
-

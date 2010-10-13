@@ -7,10 +7,10 @@
 # Load all samples per chromosome in a single $INP vcf file
 
 HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/GenomeAnalysisTK-1.0.4168/GenomeAnalysisTK.jar"
-REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
-BEAGLE=""
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/data/c2b2/ip_lab/shares/DATA/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+REF='/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/Homo_sapiens_assembly18.fasta'
+BEAGLE='/ifs/data/c2b2/ip_lab/shares/SOFTWARE/beagle/beagle.3.2.2/beagle.jar'
 
 INP=$1
 CHR=$2
@@ -20,32 +20,22 @@ $GATK \
  -T ProduceBeagleInput \
  -R $REF \
  -B:variant,VCF $INP.vcf \
- -beagle $INP.input.beaglelh
+ -o $INP.$CHR.bgl
 
-$JAVA -jar $BEAGLE like=$INP.beaglelh out=$INP.bgl
-gunzip -f $INP.bgl.gprobs.gz
-gunzip -f $INP.bgl.phased.gz
-mv $INP.bgl $INP.output.beaglelh
+$JAVA -jar $BEAGLE like=$INP.$CHR.bgl out=$INP.$CHR.bgl omitprefix=true
+gunzip -f $INP.$CHR.bgl.gprobs.gz
+gunzip -f $INP.$CHR.bgl.phased.gz
 
 $GATK \
  -L chr$CHR \
  -T BeagleOutputToVCF \
  -R $REF \
- -B:variant,VCF $INP.vcf \
- -B:beagleR2,BEAGLE $INP.bgl.r2 \
- -B:beaglePhased,BEAGLE $INP.bgl.phased \
- -B:beagleProbs,BEAGLE $INP.bgl.gprobs \ 
- --out $INP.imputed.vcf
+ -B variant,VCF,$INP.vcf \
+ -B beagleR2,BEAGLE,$INP.$CHR.bgl.r2 \
+ -B beaglePhased,BEAGLE,$INP.$CHR.bgl.phased \
+ -B beagleProbs,BEAGLE,$INP.$CHR.bgl.gprobs \
+ --out $INP.$CHR.imputed.vcf
 
-if [ -s $INP.imputed.vcf ]; then
-  rm -f $INP.bgl.r2 $INP.bgl.phased $INP.bgl.gprobs
+if [ -s $INP.$CHR.imputed.vcf ]; then
+  rm -f $INP.$CHR.bgl.r2* $INP.$CHR.bgl.phased* $INP.$CHR.bgl.gprobs* $INP.$CHR.bgl
 fi
-
-$GATK \
- -L chr$CHR \
- -R $REF \
- -T VariantEval \
- -B eval_prebeagle,VCF,$INP.vcf \
- -B eval_beagle,VCF,$INP.imputed.vcf \
- -reportType Grep \
- -o $INP.imputed.eval.txt

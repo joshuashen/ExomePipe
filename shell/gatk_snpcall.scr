@@ -1,19 +1,21 @@
 #!/bin/sh
 #$ -S /bin/sh
 #$ -cwd
-#$ -l h_vmem=5G,time=6::
+#$ -l h_vmem=5G,time=12::
 
 # Perform initial SNP calling
 # Load all samples from chromosome in a single $INP list file
 
-REF="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/valid.hg18.fa"
+HEAP=4000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/data/c2b2/ip_lab/shares/DATA/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+REF='/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/Homo_sapiens_assembly18.fasta'
 DBSNP="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/dbsnp_130_hg18.rod"
 
 INP=$1
 CHR=$2
-HEAP=4000
 
-java -Xmx${HEAP}m -jar /ifs/home/c2b2/ip_lab/yshen/usr/Sting/dist/GenomeAnalysisTK.jar \
+$GATK
  -L chr$CHR \
  -R $REF \
  -D $DBSNP \
