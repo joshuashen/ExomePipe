@@ -1,13 +1,34 @@
 # record of logistic dealings
 
-10/12/2010: add VT Test code
-VT Test implement methods mentioned in Price et al 2010. We downloaded the R code from http://genetics.bwh.harvard.edu/rare_variants/. Note: the input requires polyphen-2 scores, which can be obtained from: http://genetics.bwh.harvard.edu/pph2/bgi.shtml 
+- 10/19/2010: genome reference and GATK
+GATK is picky about the genome reference -- it requires that the chromosome 
+order is the same between the reference used for mapping and the reference 
+used for variant calling. BAM files from different genome centers were likely 
+made using different reference fasta files even for same build. So we must get
+the reference fasta files from all three centers. Here is a list of the 
+reference files:
+
+  Homo_sapiens_assembly18.fasta  # hg18 used by Broad
+  wu_build36.fasta               # build 36 used by WU
+  bcm_hg18.fasta                 # hg18 used by BCM
+  human_g1k_v37.fasta            # build 37 used by 1000 genomes project
+
+all under directory: /ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/
 
 
+- 10/12/2010: add VT Test code
+VT Test implement methods mentioned in Price et al 2010. We downloaded the R 
+code from http://genetics.bwh.harvard.edu/rare_variants/. Note: the input 
+requires polyphen-2 scores, which can be obtained from: 
+ http://genetics.bwh.harvard.edu/pph2/bgi.shtml 
 
-10/07/2010: update GATK to latest version
-1. do a new svn checkout (svn co https://svnrepos.broadinstitute.org/Sting/trunk Sting). "svn update" on old repository won't necessary work during compilation.  
+
+- 10/07/2010: update GATK to latest version
+1. do a new svn checkout
+  svn co https://svnrepos.broadinstitute.org/Sting/trunk Sting
+  "svn update" on old repository won't necessary work during compilation.  
 2. cd Sting; ant  # which is to compile
-3. "ant play" doesn't work for this version. Perhaps experimental walkers are now stable.  
+3. "ant play" doesn't work for this version. Perhaps experimental walkers are 
+  now stable.  
 4. rsync -az . yshen@login.c2b2.columbia.edu:/ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/
 
