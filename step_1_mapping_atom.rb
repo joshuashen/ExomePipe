@@ -31,7 +31,7 @@ def main
   if optHash.key?("--reference") 
     ref = optHash["--reference"]
   else
-    ref = "/ifs/home/c2b2/ip_lab/yshen/data/ref_genomes/human_g1k_v37.fasta"
+    ref = "/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/human_g1k_v37.fasta"
   end
 
   f1 = optHash["--input"]
@@ -78,9 +78,9 @@ def main
     cmd = "#{bwa} samse #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
 # We need to make a function for this.
-    cmd= "#{samtools} sort #{output} #{output}.sorted"
+    cmd= "#{samtools} sort #{output} #{output}.sorted.bam"
     system(cmd)
-    cmd = "#{samtools} index #{output}.sorted"
+    cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
   end
 end
@@ -91,7 +91,9 @@ def sortAndIndex(bam)
 end
 
 def getPrefix(fname)
-  return fname.match(/^(.*)\.1\.(.*)$/)[1]
+   return fname
+   # $stderr.puts fname
+   # return fname.match(/^(.*)[\.|\-]1[\.|\-](.*)$/)[1]
 end
 
 main()
