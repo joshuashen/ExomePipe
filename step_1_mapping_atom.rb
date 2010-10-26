@@ -4,7 +4,8 @@
 
 ### author: Yufeng Shen, c2b2, Columbia
 
-### Note: we probably want to change some bwa parameters: -o 2 (aln) and -o 2000 (sampe)
+### Note: we probably want to change some bwa parameters: 
+ ##  number of allowed gaps in "aln" step: -o 2 (default is 1) 
 
 require 'getoptlong'
 
@@ -15,6 +16,7 @@ def main
      ["--input", "-i", GetoptLong::REQUIRED_ARGUMENT],
      ["--pair", "-p", GetoptLong::OPTIONAL_ARGUMENT],
      ["--help", "-h", GetoptLong::NO_ARGUMENT],
+     ["--gaps", "-g", GetoptLong::OPTIONAL_ARGUMENT],
      ["--bwa", "-b", GetoptLong::OPTIONAL_ARGUMENT]
   )
   
@@ -55,9 +57,13 @@ def main
   threads = 2 ## number of threads used by bwa
   options = "" # other bwa options
 
+  maxgaps = 2 
+  if optHash.key?("--gaps")
+      maxgaps = optHash["--gaps"].to_i
+  end
 
   ######### align step
-  cmd="#{bwa} aln -t #{threads} #{options}  #{ref} #{f1} > #{f1}.sai" 
+  cmd="#{bwa} aln -o #{maxgaps} -t  #{threads} #{options}  #{ref} #{f1} > #{f1}.sai" 
   
   system(cmd)
 
