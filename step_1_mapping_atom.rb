@@ -1,9 +1,10 @@
 ## atomic mapping wrapper for Illumina/Solexa reads
 #  paired or single-end reads
-#  batch size:  single run, <100M reads.
+#  batch size:  single slide, <100M reads.
 
 ### author: Yufeng Shen, c2b2, Columbia
 
+### Note: we probably want to change some bwa parameters: -o 2 (aln) and -o 2000 (sampe)
 
 require 'getoptlong'
 
