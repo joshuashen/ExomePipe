@@ -1,0 +1,29 @@
+#!/bin/sh
+#$ -cwd
+
+HEAP=1000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+
+INP=""
+REF=""
+CHR=""
+DBSNP=""
+
+python /ifs/home/c2b2/ip_lab/yshen/usr/Sting/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
+
+if [[ $? != 0 ]]
+then
+	echo "Variant Eval: MakeIndelMask FAILED"
+	exit 1
+fi
+
+$GATK \
+    -L $CHR \
+    -T VariantEval -R $REF \
+    -B:eval,VCF $INP.snps.raw.vcf \
+    -D $DBSNP \
+    -E CountVariants
+    -noStandard
+    -BTI eval
+

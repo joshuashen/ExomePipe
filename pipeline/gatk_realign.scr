@@ -1,0 +1,104 @@
+#!/bin/sh
+#$ -cwd
+# Findmem
+#$ -l h_vmem=5G,time=6::
+
+# Realign reads locally around indels
+# Run with all samples from a single chromosome together in $INP.list
+
+HEAP=1000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+FIXMATE="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/picard-tools-1.29/FixMateInformation.jar"
+SAMTOOLS="/ifs/home/c2b2/ip_lab/yshen/usr/bin/samtools"
+CHRFILE="./chrdb"
+
+INP=""
+CHR=""
+REF=""
+DBSNP=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
+ERRORMESSAGE="The following error has occurred"
+
+while getopts I:L:R:D:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        [?])    echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == ""  || $REF == "" || $DBSNP == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+if [[ $CHR != "" ]]
+then
+        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+        then
+                CHR="chr${CHR}"
+        fi
+fi
+
+$GATK \
+ -L $CHR \
+ -T RealignerTargetCreator \
+ -I $INP \
+ -R $REF \
+ -D $DBSNP \
+ -o $INP.forRealigner.intervals
+
+if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.output` != "" ]]
+then
+	echo "RealignerTargetCreator FAILED"
+	exit 1
+fi
+
+$GATK \
+ -L $CHR \
+ -I $INP \
+ -R $REF \
+ -D $DBSNP \
+ -T IndelRealigner \
+ -compress 0 \
+ -targetIntervals $INP.forRealigner.intervals \
+ -o $INP.cleaned.bam
+
+# Need to implement for known-only/lane level cleaning?
+
+rm -f $INP.forRealigner.intervals
+
+if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.output` != "" ]]
+then
+	echo "IndelRealigner FAILED"
+	exit 1
+fi
+
+$FIXMATE INPUT=$INP.cleaned.bam OUTPUT=$INP.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT
+
+rm -f $INP.cleaned.bam
+
+if [[ $? != 0 ]]
+then
+	echo "Realigning: Call to FixMate FAILED"
+	exit 1
+fi
+
+$SAMTOOLS index $INP.fixed.bam
+
+if [[ $? != 0 ]]
+then
+	echo "Realigning: Samtools indexing FAILED"
+	exit 1
+fi
+
+echo "$0: samtools index complete"
+

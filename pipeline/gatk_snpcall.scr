@@ -1,0 +1,65 @@
+#!/bin/sh
+#$ -cwd
+# Findmem
+
+# Perform initial SNP calling
+# Load all samples from chromosome in a single $INP list file
+
+HEAP=1000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+
+INP=""
+CHR=""
+REF=""
+DBSNP=""
+CHRFILE="./chrdb"
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -D <DBSNP file> -P <Platform> [-L \"#:#-#\"]"
+
+while getopts I:L:R:D:P:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        P)      Platform="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        [?])    echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $DBSNP == "" || $Platform == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+#FIX THIS !!!
+Platform="UNKNOWN"
+
+if [[ $CHR != "" ]]
+then
+        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+        then
+                CHR="chr${CHR}"
+        fi
+fi
+
+$GATK \
+ -L $CHR \
+ -R $REF \
+ -D $DBSNP \
+ -T UnifiedGenotyper \
+ -I $INP \
+ -o $INP.snps.raw.vcf \
+ -stand_call_conf 10.0 \
+ -stand_emit_conf 10.0 \
+ -dcov 50 \
+ -pl $Platform
+
+#-bm EMPIRICAL
+#-A DepthOfCoverage \
+

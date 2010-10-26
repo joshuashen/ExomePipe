@@ -1,0 +1,65 @@
+#!/bin/sh
+#$ -cwd
+# Findmem
+
+# Perform low-coverage indel calls
+# Load all samples from chromosome in a single $INP bam file
+
+HEAP=1000
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
+GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+CHRFILE="./chrdb"
+
+INP=""
+CHR=""
+REF=""
+refseq=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -S <refseq> [-L \"#:#-#\"]"
+
+while getopts I:L:R:S:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        S)      refseq="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        [?])    echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $refseq == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+if [[ $CHR != "" ]]
+then
+        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+        then
+                CHR="chr${CHR}"
+        fi
+fi
+
+$GATK \
+ -L $CHR \
+ -T IndelGenotyperV2 \
+ -R $REF \
+ -I $INP \
+ -bed $INP.indels.raw.bed \
+ -verbose $INP.detailed.output.bed \
+ -o $INP.output.vcf \
+ 
+#-minCnt 2 \
+#-minFraction 0.03 \
+#-minConsensusFraction 0.6 \
+#-mnr 1000000 
+#-O $INP.indels.raw.bed \
+#-o $INP.detalied.output.bed \
+#-verbose \
+
+# Add -refseq here
+
