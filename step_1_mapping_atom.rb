@@ -96,6 +96,7 @@ def main
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
+    system("rm -rf #{output}")
   end
 end
 
