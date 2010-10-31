@@ -6,7 +6,7 @@
 # INPUT:	Run with a single read-group/lane in $INP.list
 # OUTPUT:	$INP.$CHR.recalibrated.bam recalibrated bam file
 
-HEAP=1000
+HEAP=4000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 SAMTOOLS="/ifs/home/c2b2/ip_lab/yshen/usr/bin/samtools"
@@ -15,17 +15,16 @@ CHRFILE="./chrdb"
 INP=""
 CHR=""
 REF=""
-Platform=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -P <Platform> [-L \"#:#-#\"]"
-ERRORMESSAGE="The following error has occurred"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> \"#:#-#\"]"
+ERRORMESSAGE="#### ERROR"
+ERRORMESSAGE1="The following error has occurred"
 
-while getopts I:L:R:P:h o
+while getopts I:L:R:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
         R)      REF="$OPTARG";;
-        P)      Platform="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         [?])    echo $USAGE
@@ -33,7 +32,7 @@ do      case "$o" in
         esac
 done
 
-if [[ $INP == "" || $REF == ""  || $Platform == "" ]]
+if [[ $INP == "" || $REF == ""  ]]
 then
         echo $USAGE
         exit 1
@@ -51,18 +50,19 @@ $GATK \
  -L $CHR \
  -R $REF \
  -T TableRecalibration \
- -I $INP \
+ -I $INP.fixed.bam \
  -recalFile $INP.recal_data.csv \
- --default_platform $Platform \
- --out $INP.$CHR.recalibrated.bam
+ --out $INP.recalibrated.bam
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" recalibration.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" recalibration.output pipeline.output` != "" ]]
 then
         echo "Recalibration FAILED"
         exit 1
 fi
 
-$SAMTOOLS index $INP.$CHR.recalibrated.bam
+rm -f $INP.fixed.bam
+
+$SAMTOOLS index $INP.recalibrated.bam
 
 if [[ $? != 0 ]]
 then

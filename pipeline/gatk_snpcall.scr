@@ -5,7 +5,7 @@
 # Perform initial SNP calling
 # Load all samples from chromosome in a single $INP list file
 
-HEAP=1000
+HEAP=4000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 
@@ -15,15 +15,14 @@ REF=""
 DBSNP=""
 CHRFILE="./chrdb"
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -D <DBSNP file> -P <Platform> [-L \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -D <DBSNP file> [-L \"#:#-#\"]"
 
-while getopts I:L:R:D:P:h o
+while getopts I:L:R:D:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
         R)      REF="$OPTARG";;
         D)      DBSNP="$OPTARG";;
-        P)      Platform="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         [?])    echo $USAGE
@@ -31,14 +30,11 @@ do      case "$o" in
         esac
 done
 
-if [[ $INP == "" || $REF == "" || $DBSNP == "" || $Platform == "" ]]
+if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
 then
         echo $USAGE
         exit 1
 fi
-
-#FIX THIS !!!
-Platform="UNKNOWN"
 
 if [[ $CHR != "" ]]
 then
@@ -53,13 +49,13 @@ $GATK \
  -R $REF \
  -D $DBSNP \
  -T UnifiedGenotyper \
- -I $INP \
+ -I $INP.recalibrated.bam \
  -o $INP.snps.raw.vcf \
  -stand_call_conf 10.0 \
  -stand_emit_conf 10.0 \
- -dcov 50 \
- -pl $Platform
+ -dcov 50
 
-#-bm EMPIRICAL
+#-bm EMPIRICAL \
+#-pl $Platform
 #-A DepthOfCoverage \
-
+#set call conf based on whether it's deep or low pass data

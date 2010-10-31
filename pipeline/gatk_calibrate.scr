@@ -6,7 +6,7 @@
 # INPUT:	Run with a single read-group/lane in $INP.list
 # OUTPUT:	$INP.recal_data.csv recalibrate info file
 
-HEAP=1000
+HEAP=4000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 CHRFILE="./chrdb"
@@ -15,17 +15,15 @@ INP=""
 CHR=""
 REF=""
 DBSNP=""
-Platform=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> -P <Platform> [-L \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
 
-while getopts I:L:R:D:P:h o
+while getopts I:L:R:D:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
         R)      REF="$OPTARG";;
         D)      DBSNP="$OPTARG";;
-        P)      Platform="$OPTARG";;
         h)      echo $USAGE h
                 exit 1;;
         [?])    echo $USAGE ?
@@ -33,7 +31,7 @@ do      case "$o" in
         esac
 done
 
-if [[ $INP == "" || $REF == "" || $DBSNP == "" || $Platform == "" ]]
+if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
 then
         echo $USAGE
         exit 1
@@ -51,13 +49,13 @@ $GATK \
  -L $CHR \
  -R $REF \
  --DBSNP $DBSNP \
- -I $INP \
+ -I $INP.fixed.bam \
  -T CountCovariates \
+ -nt 4 \
  -cov ReadGroupCovariate \
  -cov QualityScoreCovariate \
  -cov CycleCovariate \
  -cov DinucCovariate \
- --default_platform $Platform \
  -recalFile $INP.recal_data.csv
 
 # [-B:mask,VCF sitesToMask.vcf] \

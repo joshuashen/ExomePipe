@@ -2,11 +2,8 @@
 #$ -cwd
 # Findmem
 
-# Recalibrate base quality score
-# INPUT:	Run with a single read-group/lane in $INP.list
-# OUTPUT:	$INP.recal_data.csv recalibrate info file
 
-HEAP=1000
+HEAP=4000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 CHRFILE="./chrdb"
@@ -14,14 +11,18 @@ CHRFILE="./chrdb"
 INP=""
 CHR=""
 REF=""
+List=""
+ExonFile=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \"#:#-#\"] [-E <ExonFile>]"
+EXONUSAGE="Please specify either the file containing the interval list using -E or the sequences using -L"
 
-while getopts I:L:R:h o
+while getopts I:L:E:R:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
-        L)      CHR="$OPTARG";;
+        L)      List="$OPTARG";;
         R)      REF="$OPTARG";;
+        E)      ExonFile="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         [?])    echo $USAGE
@@ -34,11 +35,26 @@ then
         echo $USAGE
         exit 1
 fi
-if [[ $CHR != "" ]]
+
+if [[ $List != "" && $ExonFile != "" ]]
+then
+	echo $EXONUSAGE
+	exit 1
+fi
+
+if [[ $ExonFile != "" ]]
+then
+	cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.list"
+	CHR="${ExonFile}.list"
+fi
+
+if [[ $List != "" ]]
 then
 	if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
 	then
-		CHR="chr${CHR}"
+		CHR="chr${List}"
+	else
+		CHR="${List}"
 	fi
 fi
 
@@ -46,7 +62,7 @@ $GATK \
  -T DepthOfCoverage \
  -L $CHR \
  -R $REF \
- -I $INP \
+ -I $INP.recalibrated.bam \
  -o $INP.coverage
 
 # Could possibly include these

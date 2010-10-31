@@ -1,7 +1,7 @@
 #!/bin/sh
 #$ -cwd
 
-HEAP=1000
+HEAP=4000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 
@@ -9,6 +9,27 @@ INP=""
 REF=""
 CHR=""
 DBSNP=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
+
+while getopts I:L:R:D:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        [?])    echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
 
 python /ifs/home/c2b2/ip_lab/yshen/usr/Sting/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
 
@@ -23,7 +44,7 @@ $GATK \
     -T VariantEval -R $REF \
     -B:eval,VCF $INP.snps.raw.vcf \
     -D $DBSNP \
-    -E CountVariants
-    -noStandard
+    -E CountVariants \
+    -noStandard \
     -BTI eval
 

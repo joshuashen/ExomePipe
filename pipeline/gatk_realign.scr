@@ -1,12 +1,11 @@
 #!/bin/sh
 #$ -cwd
 # Findmem
-#$ -l h_vmem=5G,time=6::
 
 # Realign reads locally around indels
 # Run with all samples from a single chromosome together in $INP.list
 
-HEAP=1000
+HEAP=4000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 FIXMATE="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/picard-tools-1.29/FixMateInformation.jar"
@@ -19,7 +18,8 @@ REF=""
 DBSNP=""
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
-ERRORMESSAGE="The following error has occurred"
+ERRORMESSAGE="#### ERROR"
+ERRORMESSAGE1="The following error has occurred"
 
 while getopts I:L:R:D:h o
 do      case "$o" in
@@ -40,12 +40,14 @@ then
         exit 1
 fi
 
-if [[ $CHR != "" ]]
+if [[ $CHR == "" ]]
 then
-        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-        then
-                CHR="chr${CHR}"
-        fi
+	CHR="$SGE_TASK_ID"
+fi
+
+if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+then
+        CHR="chr${CHR}"
 fi
 
 $GATK \
@@ -54,9 +56,9 @@ $GATK \
  -I $INP \
  -R $REF \
  -D $DBSNP \
- -o $INP.forRealigner.intervals
+ -o $INP.$CHR.forRealigner.intervals 2>&1 > realignment.$SGE_TASK_ID.output
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.*.output pipeline.output` != "" ]]
 then
 	echo "RealignerTargetCreator FAILED"
 	exit 1
@@ -69,22 +71,22 @@ $GATK \
  -D $DBSNP \
  -T IndelRealigner \
  -compress 0 \
- -targetIntervals $INP.forRealigner.intervals \
- -o $INP.cleaned.bam
+ -targetIntervals $INP.$CHR.forRealigner.intervals \
+ -o $INP.$CHR.cleaned.bam 2>&1 >> realignment.$SGE_TASK_ID.output
 
 # Need to implement for known-only/lane level cleaning?
 
-rm -f $INP.forRealigner.intervals
+rm -f $INP.$CHR.forRealigner.intervals
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.*.output pipeline.output` != "" ]]
 then
 	echo "IndelRealigner FAILED"
 	exit 1
 fi
 
-$FIXMATE INPUT=$INP.cleaned.bam OUTPUT=$INP.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT
+$FIXMATE INPUT=$INP.$CHR.cleaned.bam OUTPUT=$INP.$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT 2>&1 >> realignment.$SGE_TASK_ID.output
 
-rm -f $INP.cleaned.bam
+rm -f $INP.$CHR.cleaned.bam
 
 if [[ $? != 0 ]]
 then
@@ -92,7 +94,7 @@ then
 	exit 1
 fi
 
-$SAMTOOLS index $INP.fixed.bam
+$SAMTOOLS index $INP.$CHR.fixed.bam 2>&1 >> realignment.$SGE_TASK_ID.output
 
 if [[ $? != 0 ]]
 then
