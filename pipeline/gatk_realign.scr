@@ -29,8 +29,6 @@ do      case "$o" in
         D)      DBSNP="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
-        [?])    echo $USAGE
-                exit 1;;
         esac
 done
 
@@ -42,7 +40,7 @@ fi
 
 if [[ $CHR == "" ]]
 then
-	CHR="$SGE_TASK_ID"
+	CHR="${SGE_TASK_ID}"
 fi
 
 if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
@@ -56,7 +54,7 @@ $GATK \
  -I $INP \
  -R $REF \
  -D $DBSNP \
- -o $INP.$CHR.forRealigner.intervals 2>&1 > realignment.$SGE_TASK_ID.output
+ -o $INP.$CHR.forRealigner.intervals 2>&1 > realignment.$CHR.output
 
 if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.*.output pipeline.output` != "" ]]
 then
@@ -72,7 +70,7 @@ $GATK \
  -T IndelRealigner \
  -compress 0 \
  -targetIntervals $INP.$CHR.forRealigner.intervals \
- -o $INP.$CHR.cleaned.bam 2>&1 >> realignment.$SGE_TASK_ID.output
+ -o $INP.$CHR.cleaned.bam 2>&1 >> realignment.$CHR.output
 
 # Need to implement for known-only/lane level cleaning?
 
@@ -84,7 +82,7 @@ then
 	exit 1
 fi
 
-$FIXMATE INPUT=$INP.$CHR.cleaned.bam OUTPUT=$INP.$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT 2>&1 >> realignment.$SGE_TASK_ID.output
+$FIXMATE INPUT=$INP.$CHR.cleaned.bam OUTPUT=$INP.$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT 2>&1 >> realignment.$CHR.output
 
 rm -f $INP.$CHR.cleaned.bam
 
@@ -94,7 +92,7 @@ then
 	exit 1
 fi
 
-$SAMTOOLS index $INP.$CHR.fixed.bam 2>&1 >> realignment.$SGE_TASK_ID.output
+$SAMTOOLS index $INP.$CHR.fixed.bam 2>&1 >> realignment.$CHR.output
 
 if [[ $? != 0 ]]
 then

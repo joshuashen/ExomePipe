@@ -27,8 +27,6 @@ do      case "$o" in
         R)      REF="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
-        [?])    echo $USAGE
-                exit 1;;
         esac
 done
 
@@ -38,31 +36,33 @@ then
         exit 1
 fi
 
-if [[ $CHR != "" ]]
+if [[ $CHR == "" ]]
 then
-        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-        then
-                CHR="chr${CHR}"
-        fi
+	CHR="$SGE_TASK_ID"
+fi
+
+if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+then
+        CHR="chr${CHR}"
 fi
 
 $GATK \
  -L $CHR \
  -R $REF \
  -T TableRecalibration \
- -I $INP.fixed.bam \
- -recalFile $INP.recal_data.csv \
- --out $INP.recalibrated.bam
+ -I $INP.$CHR.fixed.bam \
+ -recalFile $INP.$CHR.recal_data.csv \
+ --out $INP.$CHR.recalibrated.bam 2>&1 > recalibrate.$CHR.output
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" recalibration.output pipeline.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" recalibrate.*.output pipeline.output` != "" ]]
 then
         echo "Recalibration FAILED"
         exit 1
 fi
 
-rm -f $INP.fixed.bam
+rm -f $INP.$CHR.fixed.bam $INP.$CHR.fixed.bam.bai
 
-$SAMTOOLS index $INP.recalibrated.bam
+$SAMTOOLS index $INP.$CHR.recalibrated.bam 2>&1 >> recalibrate.$CHR.output
 
 if [[ $? != 0 ]]
 then

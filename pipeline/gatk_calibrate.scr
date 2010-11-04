@@ -24,9 +24,7 @@ do      case "$o" in
         L)      CHR="$OPTARG";;
         R)      REF="$OPTARG";;
         D)      DBSNP="$OPTARG";;
-        h)      echo $USAGE h
-                exit 1;;
-        [?])    echo $USAGE ?
+        h)      echo $USAGE
                 exit 1;;
         esac
 done
@@ -37,25 +35,26 @@ then
         exit 1
 fi
 
-if [[ $CHR != "" ]]
+if [[ $CHR == "" ]]
 then
-        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-        then
-                CHR="chr${CHR}"
-        fi
+	CHR="$SGE_TASK_ID"
+fi
+
+if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+then
+        CHR="chr${CHR}"
 fi
 
 $GATK \
  -L $CHR \
  -R $REF \
  --DBSNP $DBSNP \
- -I $INP.fixed.bam \
+ -I $INP.$CHR.fixed.bam \
  -T CountCovariates \
- -nt 4 \
  -cov ReadGroupCovariate \
  -cov QualityScoreCovariate \
  -cov CycleCovariate \
  -cov DinucCovariate \
- -recalFile $INP.recal_data.csv
+ -recalFile $INP.$CHR.recal_data.csv 2>&1 > calibrate.$CHR.output
 
 # [-B:mask,VCF sitesToMask.vcf] \

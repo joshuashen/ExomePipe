@@ -25,8 +25,6 @@ do      case "$o" in
         E)      ExonFile="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
-        [?])    echo $USAGE
-                exit 1;;
         esac
 done
 
@@ -36,7 +34,7 @@ then
         exit 1
 fi
 
-if [[ $List != "" && $ExonFile != "" ]]
+if [[ $List == "" && $ExonFile == "" ]]
 then
 	echo $EXONUSAGE
 	exit 1
@@ -44,12 +42,13 @@ fi
 
 if [[ $ExonFile != "" ]]
 then
-	cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.list"
-	CHR="${ExonFile}.list"
-fi
-
-if [[ $List != "" ]]
-then
+	if [[ $List == "" ]]
+	then
+		List="${SGE_TASK_ID}"
+	fi
+	cat $ExonFile | grep "chr${List}	" | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.${List}.list"
+	CHR="${ExonFile}.${List}.list"
+else
 	if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
 	then
 		CHR="chr${List}"
@@ -62,8 +61,10 @@ $GATK \
  -T DepthOfCoverage \
  -L $CHR \
  -R $REF \
- -I $INP.recalibrated.bam \
- -o $INP.coverage
+ -I $INP.$List.recalibrated.bam \
+ -o $INP.$List.coverage 2>&1 > depthofcoverage.$List.output
+
+rm ${ExonFile}.${List}.list
 
 # Could possibly include these
 #-omitBaseOutput \

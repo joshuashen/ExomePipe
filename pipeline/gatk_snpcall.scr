@@ -25,8 +25,6 @@ do      case "$o" in
         D)      DBSNP="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
-        [?])    echo $USAGE
-                exit 1;;
         esac
 done
 
@@ -36,12 +34,13 @@ then
         exit 1
 fi
 
-if [[ $CHR != "" ]]
+if [[ $CHR == "" ]]
 then
-        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-        then
-                CHR="chr${CHR}"
-        fi
+	CHR="${SGE_TASK_ID}"
+fi
+if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+then
+        CHR="chr${CHR}"
 fi
 
 $GATK \
@@ -49,11 +48,11 @@ $GATK \
  -R $REF \
  -D $DBSNP \
  -T UnifiedGenotyper \
- -I $INP.recalibrated.bam \
- -o $INP.snps.raw.vcf \
+ -I $INP.$CHR.recalibrated.bam \
+ -o $INP.$CHR.snps.raw.vcf \
  -stand_call_conf 10.0 \
  -stand_emit_conf 10.0 \
- -dcov 50
+ -dcov 50 2>&1 > snpcalling.$CHR.output
 
 #-bm EMPIRICAL \
 #-pl $Platform

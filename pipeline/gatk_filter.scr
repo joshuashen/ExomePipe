@@ -22,8 +22,6 @@ do      case "$o" in
         R)      REF="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
-        [?])    echo $USAGE
-                exit 1;;
         esac
 done
 
@@ -31,6 +29,11 @@ if [[ $INP == "" || $REF == "" ]]
 then
         echo $USAGE
         exit 1
+fi
+
+if [[ $CHR == "" ]]
+then
+	CHR="${SGE_TASK_ID}"
 fi
 
 python /ifs/home/c2b2/ip_lab/yshen/usr/Sting/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
@@ -42,7 +45,6 @@ then
 fi
 
 $GATK \
- -L $CHR \
  -T VariantFiltration \
  -R $REF \
  -o $INP.snps.filtered.vcf \
@@ -53,7 +55,7 @@ $GATK \
  --filterExpression "QUAL < 30.0 || AB > 0.75 && DP > 40 || QD < 5.0 || HRun > 5 || SB > -0.10" \
  --filterName "StandardFilters" \
  --filterExpression "MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1" \
- --filterName "HARD_TO_VALIDATE"
+ --filterName "HARD_TO_VALIDATE" 
 
 rm $INP.snps.raw.vcf.idx
 

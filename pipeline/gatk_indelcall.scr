@@ -24,8 +24,6 @@ do      case "$o" in
         R)      REF="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
-        [?])    echo $USAGE
-                exit 1;;
         esac
 done
 
@@ -35,22 +33,23 @@ then
         exit 1
 fi
 
-if [[ $CHR != "" ]]
+if [[ $CHR == "" ]]
 then
-        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-        then
-                CHR="chr${CHR}"
-        fi
+	CHR="${SGE_TASK_ID}"
+fi
+if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+then
+        CHR="chr${CHR}"
 fi
 
 $GATK \
  -L $CHR \
  -T IndelGenotyperV2 \
  -R $REF \
- -I $INP.recalibrated.bam \
- -bed $INP.indels.raw.bed \
- -verbose $INP.detailed.output.bed \
- -o $INP.output.vcf \
+ -I $INP.$CHR.recalibrated.bam \
+ -bed $INP.$CHR.indels.raw.bed \
+ -verbose $INP.$CHR.detailed.output.bed \
+ -o $INP.$CHR.output.vcf 2>&1 > indelcalling.$CHR.output
  
 #-minCnt 2 \
 #-minFraction 0.03 \
