@@ -85,14 +85,14 @@ def main
     ## sort and index the BAM file
     cmd= "#{samtools} sort #{output} #{output}.sorted"
     system(cmd)
-    cmd = "#{samtools} index #{output}.sorted"
+    cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
   else # single reads
     output = f1 + ".bam"
     cmd = "#{bwa} samse #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
 # We need to make a function for this.
-    cmd= "#{samtools} sort #{output} #{output}.sorted.bam"
+    cmd= "#{samtools} sort #{output} #{output}.sorted"
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
