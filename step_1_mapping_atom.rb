@@ -87,6 +87,7 @@ def main
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
+    system("rm -rf #{output}")
   else # single reads
     output = f1 + ".bam"
     cmd = "#{bwa} samse #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
