@@ -36,9 +36,9 @@ echo "Calling ./gatk_realign.scr step by step..."
 
 if [[ $CHR == "" ]]
 then
-	qsub -l mem=8G,time=6:: -o realignment.X.output -e realignment.X.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L "X"
-	qsub -l mem=8G,time=6:: -o realignment.Y.output -e realignment.Y.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L "Y"
-	qsub -l mem=8G,time=16:: -t 1-22 -sync y -o realignment.output -e realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP
+	qsub -l mem=8G,time=6:: -e realignment.output -o realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L "X"
+	qsub -l mem=8G,time=6:: -e realignment.output -o realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L "Y"
+	qsub -l mem=8G,time=16:: -t 1-22 -sync y -e realignment.output -o realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP
 else
 	qsub -l mem=8G,time=16:: -sync y -o realignment.output -e realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L $CHR
 fi
@@ -56,8 +56,8 @@ date
 echo "Calling ./gatk_calibrate.scr ..."
 if [[ $CHR == "" ]]
 then
-	qsub -l mem=8G,time=6:: -o calibrate.X.output -e calibrate.X.output ./gatk_calibrate.scr -I $INP -R $REF -D $DBSNP -L "X"
-	qsub -l mem=8G,time=6:: -o calibrate.Y.output -e calibrate.Y.output ./gatk_calibrate.scr -I $INP -R $REF -D $DBSNP -L "Y"
+	qsub -l mem=8G,time=6:: -o calibrate.output -e calibrate.output ./gatk_calibrate.scr -I $INP -R $REF -D $DBSNP -L "X"
+	qsub -l mem=8G,time=6:: -o calibrate.output -e calibrate.output ./gatk_calibrate.scr -I $INP -R $REF -D $DBSNP -L "Y"
 	qsub -l mem=8G,time=16:: -t 1-22 -sync y -o calibrate.output -e calibrate.output ./gatk_calibrate.scr -I $INP -R $REF -D $DBSNP
 else
 	qsub -l mem=8G,time=16:: -sync y -o calibrate.output -e calibrate.output ./gatk_calibrate.scr -I $INP -R $REF -D $DBSNP -L $CHR
@@ -76,8 +76,8 @@ date
 echo "Calling ./gatk_recalibrate.scr ..."
 if [[ $CHR == "" ]]
 then
-	qsub -l mem=8G,time=6:: -o recalibrate.X.output -e recalibrate.X.output ./gatk_recalibrate.scr -I $INP -R $REF -L "X"
-	qsub -l mem=8G,time=6:: -o recalibrate.Y.output -e recalibrate.Y.output ./gatk_recalibrate.scr -I $INP -R $REF -L "Y"
+	qsub -l mem=8G,time=6:: -o recalibrate.output -e recalibrate.output ./gatk_recalibrate.scr -I $INP -R $REF -L "X"
+	qsub -l mem=8G,time=6:: -o recalibrate.output -e recalibrate.output ./gatk_recalibrate.scr -I $INP -R $REF -L "Y"
 	qsub -l mem=8G,time=16:: -t 1-22 -sync y -o recalibrate.output -e recalibrate.output ./gatk_recalibrate.scr -I $INP -R $REF
 else
 	qsub -l mem=8G,time=16:: -sync y -o recalibrate.output -e recalibrate.output ./gatk_recalibrate.scr -I $INP -R $REF -L $CHR
@@ -98,8 +98,8 @@ if [[ $ExonFile == "" ]]
 then
 	qsub -l mem=8G,time=8:: -o depthofcoverage.output -e depthofcoverage.output ./gatk_depthofcoverage.scr -I $INP -R $REF -L $CHR
 else
-	qsub -l mem=8G,time=8:: -o depthofcoverage.X.output -e depthofcoverage.X.output ./gatk_depthofcoverage.scr -I $INP -R $REF -E "$ExonFile" -L "X"
-	qsub -l mem=8G,time=8:: -o depthofcoverage.Y.output -e depthofcoverage.Y.output ./gatk_depthofcoverage.scr -I $INP -R $REF -E "$ExonFile" -L "Y"
+	qsub -l mem=8G,time=8:: -o depthofcoverage.output -e depthofcoverage.output ./gatk_depthofcoverage.scr -I $INP -R $REF -E "$ExonFile" -L "X"
+	qsub -l mem=8G,time=8:: -o depthofcoverage.output -e depthofcoverage.output ./gatk_depthofcoverage.scr -I $INP -R $REF -E "$ExonFile" -L "Y"
 	qsub -l mem=8G,time=8:: -t 1-22 -o depthofcoverage.output -e depthofcoverage.output ./gatk_depthofcoverage.scr -I $INP -R $REF -E "$ExonFile"
 fi
 if [[ $? != 0 || `grep "$ERRORMESSAGE" depthofcoverage.*.output pipeline.output` != "" ]]
@@ -114,26 +114,17 @@ echo
 
 date
 echo "Calling ./gatk_indelcall.scr ..."
+#rm $INP.indels.raw.bed
+#rm $INP.detailed.output.bed
+#rm $INP.output.vcf
 if [[ $CHR == "" ]]
 then
-	qsub -l mem=8G,time=6:: -o indelcalling.X.output -e indelcalling.X.output ./gatk_indelcall.scr -I $INP -R $REF -L "X"
-	qsub -l mem=8G,time=6:: -o indelcalling.Y.output -e indelcalling.Y.output ./gatk_indelcall.scr -I $INP -R $REF -L "Y"
+	qsub -l mem=8G,time=6:: -o indelcalling.output -e indelcalling.output ./gatk_indelcall.scr -I $INP -R $REF -L "X"
+	qsub -l mem=8G,time=6:: -o indelcalling.output -e indelcalling.output ./gatk_indelcall.scr -I $INP -R $REF -L "Y"
 	qsub -l mem=8G,time=16:: -t 1-22 -sync y -o indelcalling.output -e indelcalling.output ./gatk_indelcall.scr -I $INP -R $REF
 else
 	qsub -l mem=8G,time=16:: -sync y -o indelcalling.output -e indelcalling.output ./gatk_indelcall.scr -I $INP -R $REF -L $CHR
 fi
-mv $INP.1.indels.raw.bed $INP.indels.raw.bed
-mv $INP.1.detailed.output.bed $INP.detailed.output.bed
-mv $INP.1.output.vcf $INP.output.vcf
-for i in 2 3 4 5 6 7 8 9 X Y 10 11 12 13 14 15 16 17 18 19 20 21 22
-do
-	cat $INP.$i.indels.raw.bed >> $INP.indels.raw.bed
-	rm $INP.$i.indels.raw.bed
-	cat $INP.$i.detailed.output.bed >> $INP.detailed.output.bed
-	rm $INP.$i.detailed.output.bed
-	cat $INP.$i.output.vcf >> $INP.output.vcf
-	rm $INP.$i.output.vcf
-done
 if [[ $? != 0 || `grep "$ERRORMESSAGE" indelcalling.*.output pipeline.output` != "" ]]
 then
 	echo "Indel calling FAILED"
@@ -148,8 +139,8 @@ date
 echo "Calling ./gatk_snpcall.scr ..."
 if [[ $CHR == "" ]]
 then
-	qsub -l mem=8G,time=6:: -o snpcalling.X.output -e snpcalling.X.output ./gatk_snpcall.scr -I $INP -R $REF -D $DBSNP -L "X"
-	qsub -l mem=8G,time=6:: -o snpcalling.Y.output -e snpcalling.Y.output ./gatk_snpcall.scr -I $INP -R $REF -D $DBSNP -L "Y"
+	qsub -l mem=8G,time=6:: -o snpcalling.output -e snpcalling.output ./gatk_snpcall.scr -I $INP -R $REF -D $DBSNP -L "X"
+	qsub -l mem=8G,time=6:: -o snpcalling.output -e snpcalling.output ./gatk_snpcall.scr -I $INP -R $REF -D $DBSNP -L "Y"
 	qsub -l mem=8G,time=16:: -t 1-22 -sync y -o snpcalling.output -e snpcalling.output ./gatk_snpcall.scr -I $INP -R $REF -D $DBSNP
 else
 	qsub -l mem=8G,time=16:: -sync y -o snpcalling.output -e snpcalling.output ./gatk_snpcall.scr -I $INP -R $REF -D $DBSNP -L $CHR

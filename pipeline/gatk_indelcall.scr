@@ -50,6 +50,7 @@ $GATK \
  -bed $INP.$CHR.indels.raw.bed \
  -verbose $INP.$CHR.detailed.output.bed \
  -o $INP.$CHR.output.vcf 2>&1 > indelcalling.$CHR.output
+
  
 #-minCnt 2 \
 #-minFraction 0.03 \

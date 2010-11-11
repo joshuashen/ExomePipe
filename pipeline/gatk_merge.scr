@@ -11,6 +11,7 @@ GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysis
 
 INP=""
 REF=""
+CHRFILE="./chrdb"
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta>"
 
@@ -29,6 +30,10 @@ then
         exit 1
 fi
 
+if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+then
+        CHR="chr"
+fi
 BINP=`ls $INP.*.snps.raw.vcf | awk '{ print "-B input" NR ",VCF," $1 }' | tr '\n' ' '`
 
 $GATK \
@@ -41,17 +46,20 @@ $GATK \
 
 
 
-grep Counted $INP.1.recal_data.csv > $INP.recal_data.csv
-grep Skipped $INP.1.recal_data.csv >> $INP.recal_data.csv
-grep ReadGroup $INP.1.recal_data.csv >> $INP.recal_data.csv
+grep Counted $INP.${CHR}1.recal_data.csv > $INP.recal_data.csv
+grep Skipped $INP.${CHR}1.recal_data.csv >> $INP.recal_data.csv
+grep ReadGroup $INP.${CHR}1.recal_data.csv >> $INP.recal_data.csv
 
 rm $INP.recalibrated.bam
 rm $INP.recalibrated.bam.bai
+rm $INP.indels.raw.bed
+rm $INP.detailed.output.bed
+rm $INP.output.vcf
 
 rm $INP.coverage*
-grep Locus $INP.1.coverage > $INP.coverage
+grep Locus $INP.${CHR}1.coverage > $INP.coverage
 
-for i in 1 2 3 4 5 6 7 8 9 X Y 10 11 12 13 14 15 16 17 18 19 20 21 22
+for i in ${CHR}1 ${CHR}2 ${CHR}3 ${CHR}4 ${CHR}5 ${CHR}6 ${CHR}7 ${CHR}8 ${CHR}9 ${CHR}10 ${CHR}11 ${CHR}12 ${CHR}13 ${CHR}14 ${CHR}15 ${CHR}16 ${CHR}17 ${CHR}18 ${CHR}19 ${CHR}20 ${CHR}21 ${CHR}22 ${CHR}X ${CHR}Y
 do
 	rm $INP.$i.snps.raw.vcf
 	rm $INP.$i.snps.raw.vcf.idx
@@ -66,6 +74,13 @@ do
 
 	grep -v Locus $INP.$i.coverage >> $INP.coverage
 	rm $INP.$i.coverage*
+
+	cat $INP.$i.indels.raw.bed >> $INP.indels.raw.bed
+	rm $INP.$i.indels.raw.bed
+	cat $INP.$i.detailed.output.bed >> $INP.detailed.output.bed
+	rm $INP.$i.detailed.output.bed
+	cat $INP.$i.output.vcf >> $INP.output.vcf
+	rm $INP.$i.output.vcf
 
 	cat ./realignment.$i.output >> ./realignment.output
 	rm realignment.$i.output

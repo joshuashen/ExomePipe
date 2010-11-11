@@ -57,5 +57,3 @@ $GATK \
  --filterExpression "MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1" \
  --filterName "HARD_TO_VALIDATE" 
 
-rm $INP.snps.raw.vcf.idx
-

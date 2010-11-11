@@ -1,2 +1,8 @@
-./run_pipeline.sh -I ./data/TCGA-13-1482-10A-01W-0549-09_IlluminaGA-DNASeq_exome.bam.sorted.bam -R ./data/wu_build36.fasta -L "1:20138-358470" -D ./data/dbsnp_129_b36.ordered.rod -S /ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/refseq.autosome.rod -P illumina > pipeline.output
+#!/bin/sh
+#$ -cwd
+#$ -l mem=15G,time=16::
+
+rm *.output
+
+./run_pipeline.sh -I /ifs/scratch/c2b2/ip_lab/yshen/Yale/$1 -R /ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/bcm_hg18.fasta -E /ifs/scratch/c2b2/ip_lab/aps2157/ExomePipe/pipeline/data/old_samples/captureexoncoordinatesonly.txt -D /ifs/scratch/c2b2/ip_lab/aps2157/ExomePipe/pipeline/data/old_samples/dbsnp_129_hg18.ordered.rod > pipeline.output
 

@@ -52,6 +52,7 @@ $GATK \
  -o $INP.$CHR.snps.raw.vcf \
  -stand_call_conf 10.0 \
  -stand_emit_conf 10.0 \
+ -pl UNKNOWN \
  -dcov 50 2>&1 > snpcalling.$CHR.output
 
 #-bm EMPIRICAL \

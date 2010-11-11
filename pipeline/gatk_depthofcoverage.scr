@@ -3,7 +3,7 @@
 # Findmem
 
 
-HEAP=4000
+HEAP=1000
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
 GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
 CHRFILE="./chrdb"
@@ -46,14 +46,23 @@ then
 	then
 		List="${SGE_TASK_ID}"
 	fi
-	cat $ExonFile | grep "chr${List}	" | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.${List}.list"
+        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+	then
+                INPFILE="chr${List}"
+		cat $ExonFile | grep "chr${List}	" | awk '{split($1,a,"chr"); print "chr" a[2] ":" $2 "-" $3}' > "${ExonFile}.${List}.list"
+        else
+                INPFILE="${List}"
+		cat $ExonFile | grep "chr${List}	" | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.${List}.list"
+       	fi
 	CHR="${ExonFile}.${List}.list"
 else
 	if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
 	then
 		CHR="chr${List}"
+                INPFILE="chr${List}"
 	else
 		CHR="${List}"
+                INPFILE="${List}"
 	fi
 fi
 
@@ -61,8 +70,8 @@ $GATK \
  -T DepthOfCoverage \
  -L $CHR \
  -R $REF \
- -I $INP.$List.recalibrated.bam \
- -o $INP.$List.coverage 2>&1 > depthofcoverage.$List.output
+ -I $INP.$INPFILE.recalibrated.bam \
+ -o $INP.$INPFILE.coverage 2>&1 > depthofcoverage.$INPFILE.output
 
 rm ${ExonFile}.${List}.list
 
