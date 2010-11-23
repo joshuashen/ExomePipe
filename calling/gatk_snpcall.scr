@@ -1,0 +1,59 @@
+#!/bin/sh
+#$ -cwd
+# Findmem
+
+# Perform initial SNP calling
+# Load all samples from chromosome in a single $INP list file
+
+HEAP=4000
+
+
+INP=""
+CHR=""
+REF=""
+DBSNP=""
+GLOBAL=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -D <DBSNP file> [-L \"#:#-#\"]"
+
+while getopts I:L:R:D:g:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+. $GLOBAL
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+
+
+
+
+$GATK \
+ -R $REF \
+ -D $DBSNP \
+ -T UnifiedGenotyper \
+ -nt 4 \
+ -I $INP \
+ -o $INP.snps.raw.vcf \
+ -stand_call_conf 10.0 \
+ -stand_emit_conf 10.0 \
+ -dcov 50 
+
+#-bm EMPIRICAL \
+#-pl $Platform
+#-A DepthOfCoverage \
+#set call conf based on whether it's deep or low pass data

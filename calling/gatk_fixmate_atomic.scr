@@ -1,0 +1,29 @@
+#!/bin/bash
+#$ -cwd
+
+while getopts I:L:R:D:g:m:s:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;  # global config
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+HEAP=3000
+
+. $GLOBAL
+
+OUTDIR=$INP"_pipe"
+if [ ! -d $OUTDIR ]; then
+  mkdir $OUTDIR
+fi
+
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+FIXMATE="$JAVA -jar ${PICARD}/FixMateInformation.jar"
+
+$FIXMATE INPUT=$OUTDIR/$CHR.cleaned.bam OUTPUT=$OUTDIR/$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT
+
+echo "fixmate complete"

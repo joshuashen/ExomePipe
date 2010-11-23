@@ -1,0 +1,64 @@
+#!/bin/bash
+#$ -cwd
+# Findmem
+
+
+ 
+# Recalibrate base quality score
+# INPUT:	Run with a single read-group/lane in $INP.list
+# OUTPUT:	$INP.recal_data.csv recalibrate info file
+
+HEAP=4000
+
+
+INP=""
+REF=""
+DBSNP=""
+GLOBAL=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file>"
+
+while getopts I:R:D:g:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $DBSNP == "" || $GLOBAL == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+. $GLOBAL
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+
+
+# if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+# then
+#        CHR="chr${CHR}"
+# fi
+
+echo $GLOBAL
+echo $GATK
+
+$GATK \
+ -R $REF \
+ --DBSNP $DBSNP \
+ -I $INP \
+ -nt 4 \
+ -T CountCovariates \
+ -cov ReadGroupCovariate \
+ -cov QualityScoreCovariate \
+ -cov CycleCovariate \
+ -cov DinucCovariate \
+ -recalFile $INP.recal_data.csv
+
+# [-B:mask,VCF sitesToMask.vcf] \

@@ -1,0 +1,3 @@
+finish the pipeline
+study the depthcoverage of a certain region across multiple samples
+calculate ta/tv ratio

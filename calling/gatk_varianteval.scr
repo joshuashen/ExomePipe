@@ -1,0 +1,54 @@
+#!/bin/sh
+#$ -cwd
+
+HEAP=4000
+
+
+INP=""
+REF=""
+CHR=""
+DBSNP=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
+
+while getopts I:L:R:D:g:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+. $GLOBAL
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+
+
+python $STING/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
+
+if [[ $? != 0 ]]
+then
+	echo "Variant Eval: MakeIndelMask FAILED"
+	exit 1
+fi
+
+$GATK \
+    -T VariantEval -R $REF \
+    -B:eval,VCF $INP.snps.raw.vcf \
+    -D $DBSNP \
+    -E CountVariants \
+    -noStandard \
+    -o $INP.snps.raw.vcf.eval \ 
+    -BTI eval
+

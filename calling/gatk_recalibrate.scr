@@ -1,0 +1,82 @@
+#!/bin/sh
+#$ -cwd
+# Findmem
+
+# Recalibrate base quality score
+# INPUT:	Run with a single read-group/lane in $INP.list
+# OUTPUT:	$INP.$CHR.recalibrated.bam recalibrated bam file
+
+HEAP=4000
+
+# CHRFILE="${BPATH}/chrdb"
+
+INP=""
+CHR=""
+REF=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> \"#:#-#\"]"
+ERRORMESSAGE="#### ERROR"
+ERRORMESSAGE1="The following error has occurred"
+
+while getopts I:L:R:g:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == ""  ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+. $GLOBAL
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+
+# if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+# then
+#        CHR="chr${CHR}"
+# fi
+
+
+$GATK \
+ -R $REF \
+ --DBSNP $DBSNP \
+ -I $INP \
+ -nt 4 \
+ -T CountCovariates \
+ -cov ReadGroupCovariate \
+ -cov QualityScoreCovariate \
+ -cov CycleCovariate \
+ -cov DinucCovariate \
+ -recalFile $INP.recal_data.csv
+
+# [-B:mask,VCF sitesToMask.vcf] \
+
+
+
+$GATK \
+ -R $REF \
+ -T TableRecalibration \
+ -I $INP \
+ -recalFile $INP.recal_data.csv \
+ --out $INP.recalibrated.bam 
+
+
+$SAMTOOLS index $INP.recalibrated.bam 
+
+if [[ $? != 0 ]]
+then
+        echo "Recalibration: Samtools indexing FAILED"
+        exit 1
+fi
+
+echo "$0: samtools index complete"
+

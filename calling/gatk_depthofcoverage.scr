@@ -1,0 +1,73 @@
+#!/bin/bash
+#$ -cwd
+# Findmem
+
+
+HEAP=4000
+
+
+INP=""
+CHR=""
+REF=""
+List=""
+ExonFile=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \"#:#-#\"] [-E <ExonFile>]"
+EXONUSAGE="Please specify either the file containing the interval list using -E or the sequences using -L"
+
+while getopts I:L:E:R:g:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      List="$OPTARG";;
+        R)      REF="$OPTARG";;
+        E)      ExonFile="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+. $GLOBAL
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+
+
+if [[ $INP == "" || $REF == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+if [[ $ExonFile == "" ]]
+then
+	echo $EXONUSAGE
+	exit 1
+fi
+
+
+if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                            
+                                                                           
+    then
+    
+    cat $ExonFile | awk '{ print $1":"$2"-"$3}' > "$INP.target.list"
+
+else
+
+    cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "$INP.target.list"
+fi
+
+
+
+CHR="$INP.target.list"
+	
+$GATK \
+ -T DepthOfCoverage \
+ -L $CHR \
+ -R $REF \
+ -I $INP \
+ -o $INP.coverage
+
+
+# Could possibly include these
+

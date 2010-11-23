@@ -1,0 +1,53 @@
+#!/bin/sh
+#$ -cwd
+#$ -l mem=5G,time=1::
+# Findmem
+
+
+# Load all samples from chromosome in a single $INP bam file
+
+HEAP=4000
+
+INP=""
+CHR=""
+REF=""
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> [-L \"#:#-#\"]"
+
+while getopts I:L:R:g:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        L)      CHR="$OPTARG";;
+        R)      REF="$OPTARG";;
+        g)      GLOBAL="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+. $GLOBAL
+
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+
+$GATK \
+ -T IndelGenotyperV2 \
+ -R $REF \
+ -I $INP \
+ -bed $INP.indels.raw.bed \
+ -verbose $INP.detailed.output.bed \
+ -o $INP.indel-output.vcf
+ 
+#-minCnt 2 \
+#-minFraction 0.03 \
+#-minConsensusFraction 0.6 \
+#-mnr 1000000 
+#-O $INP.indels.raw.bed \
+#-o $INP.detalied.output.bed \
+#-verbose \
