@@ -5,13 +5,15 @@
 # Filter SNPs in indel regions
 # Load all samples from chromosome in a single $INP vcf file
 
-HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+GLOBAL="global_config.sh"
 
-INP=""
-REF=""
-CHR=""
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \" #:#-#\"]"
 
@@ -29,11 +31,6 @@ if [[ $INP == "" || $REF == "" ]]
 then
         echo $USAGE
         exit 1
-fi
-
-if [[ $CHR == "" ]]
-then
-	CHR="${SGE_TASK_ID}"
 fi
 
 python /ifs/home/c2b2/ip_lab/yshen/usr/Sting/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed

@@ -2,20 +2,17 @@
 #$ -cwd
 # Findmem
 
+GLOBAL="global_config.sh"
 
-HEAP=1000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
-CHRFILE="./chrdb"
-
-INP=""
-CHR=""
-REF=""
-List=""
-ExonFile=""
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \"#:#-#\"] [-E <ExonFile>]"
-EXONUSAGE="Please specify either the file containing the interval list using -E or the sequences using -L"
 
 while getopts I:L:E:R:h o
 do      case "$o" in
@@ -34,46 +31,46 @@ then
         exit 1
 fi
 
-if [[ $List == "" && $ExonFile == "" ]]
+if [[ $List == "" && $ExonFile == "" || $List != "" && $ExonFile != "" ]]
 then
 	echo $EXONUSAGE
 	exit 1
 fi
 
+CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
 if [[ $ExonFile != "" ]]
 then
-	if [[ $List == "" ]]
+        if [[ -n $CHR_NAME ]]
 	then
-		List="${SGE_TASK_ID}"
-	fi
-        if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-	then
-                INPFILE="chr${List}"
-		cat $ExonFile | grep "chr${List}	" | awk '{split($1,a,"chr"); print "chr" a[2] ":" $2 "-" $3}' > "${ExonFile}.${List}.list"
+		cat $ExonFile | awk '{split($1,a,"chr"); print "chr" a[2] ":" $2 "-" $3}' > "${ExonFile}.list"
+		echo non-zero ${ExonFile}.list
         else
-                INPFILE="${List}"
-		cat $ExonFile | grep "chr${List}	" | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.${List}.list"
+		cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "${ExonFile}.list"
+		echo zero ${ExonFile}.list
        	fi
-	CHR="${ExonFile}.${List}.list"
+	CHR="${ExonFile}.list"
 else
-	if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+        if [[ `grep chr $CHR` == "" && -n $CHR_NAME ]]
 	then
 		CHR="chr${List}"
-                INPFILE="chr${List}"
 	else
 		CHR="${List}"
-                INPFILE="${List}"
 	fi
+	echo CHR is $CHR
 fi
 
 $GATK \
  -T DepthOfCoverage \
  -L $CHR \
  -R $REF \
- -I $INP.$INPFILE.recalibrated.bam \
- -o $INP.$INPFILE.coverage 2>&1 > depthofcoverage.$INPFILE.output
+ -I $INP \
+ -o $INP.coverage
 
-rm ${ExonFile}.${List}.list
+if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/depthofcoverage.output "$DATAPATH"/pipeline.output` != "" ]]
+then
+        echo "Depth of coverage FAILED"
+        exit 1
+fi
 
 # Could possibly include these
 #-omitBaseOutput \

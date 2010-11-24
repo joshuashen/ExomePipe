@@ -5,42 +5,49 @@
 # Perform initial SNP calling
 # Load all samples from chromosome in a single $INP list file
 
-HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
+GLOBAL="global_config.sh"
 
-INP=""
-CHR=""
-REF=""
-DBSNP=""
-CHRFILE="./chrdb"
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -D <DBSNP file> [-L \"#:#-#\"]"
 
-while getopts I:L:R:D:h o
+while getopts I:L:R:D:P:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
         R)      REF="$OPTARG";;
         D)      DBSNP="$OPTARG";;
+        P)      Platform="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
 done
 
-if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
+if [[ $INP == "" || $REF == "" || $DBSNP == "" || $Platform == "" ]]
 then
         echo $USAGE
         exit 1
 fi
 
-if [[ $CHR == "" ]]
+CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
+
+if [[ $CHR != "" ]]
 then
-	CHR="${SGE_TASK_ID}"
+        if [[ `grep chr $CHR` == "" && -n $CHR_NAME ]]
+        then
+                CHR="chr${CHR}"
+        fi
 fi
-if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+
+if [[ $Platform == "illumina" ]]
 then
-        CHR="chr${CHR}"
+	Platform="UNKNOWN"
 fi
 
 $GATK \
@@ -48,12 +55,12 @@ $GATK \
  -R $REF \
  -D $DBSNP \
  -T UnifiedGenotyper \
- -I $INP.$CHR.recalibrated.bam \
- -o $INP.$CHR.snps.raw.vcf \
+ -I $INP \
+ -o $INP.snps.raw.vcf \
  -stand_call_conf 10.0 \
  -stand_emit_conf 10.0 \
- -pl UNKNOWN \
- -dcov 50 2>&1 > snpcalling.$CHR.output
+ -pl $Platform \
+ -dcov 50
 
 #-bm EMPIRICAL \
 #-pl $Platform

@@ -1,25 +1,21 @@
 #!/bin/sh
 #$ -cwd
-# Findmem
+# -l mem=8G,time=4::
 
 # Realign reads locally around indels
 # Run with all samples from a single chromosome together in $INP.list
 
-HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
-FIXMATE="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/picard-tools-1.29/FixMateInformation.jar"
-SAMTOOLS="/ifs/home/c2b2/ip_lab/yshen/usr/bin/samtools"
-CHRFILE="./chrdb"
+GLOBAL="global_config.sh"
 
-INP=""
-CHR=""
-REF=""
-DBSNP=""
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
-ERRORMESSAGE="#### ERROR"
-ERRORMESSAGE1="The following error has occurred"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> -L \"#:#-#\""
 
 while getopts I:L:R:D:h o
 do      case "$o" in
@@ -32,18 +28,26 @@ do      case "$o" in
         esac
 done
 
-if [[ $INP == ""  || $REF == "" || $DBSNP == "" ]]
+#NOTE!!!
+#Enforcing the need for providing chromosome list as input due to amount of
+#time taken to run the step. Realignment will not be permitted without that input.
+#To remove the restriction, change this line below.
+
+if [[ $INP == ""  || $REF == "" || $DBSNP == "" || $CHR == "" && $SGE_TASK_ID == "" ]]
 then
         echo $USAGE
         exit 1
 fi
+
+DATAPATH=`dirname "$INP"`
+CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
 
 if [[ $CHR == "" ]]
 then
 	CHR="${SGE_TASK_ID}"
 fi
 
-if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+if [[ `echo "$CHR" | grep chr` == "" && -n $CHR_NAME ]]
 then
         CHR="chr${CHR}"
 fi
@@ -54,11 +58,11 @@ $GATK \
  -I $INP \
  -R $REF \
  -D $DBSNP \
- -o $INP.$CHR.forRealigner.intervals 2>&1 > realignment.$CHR.output
+ -o $INP$CHR.forRealigner.intervals 2>&1 > $DATAPATH/realignment$CHR.output
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.*.output pipeline.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/realignment"$CHR".output "$DATAPATH"/pipeline.output` != "" ]]
 then
-	echo "RealignerTargetCreator FAILED"
+	echo "${CHR}RealignerTargetCreator FAILED"
 	exit 1
 fi
 
@@ -69,36 +73,36 @@ $GATK \
  -D $DBSNP \
  -T IndelRealigner \
  -compress 0 \
- -targetIntervals $INP.$CHR.forRealigner.intervals \
- -o $INP.$CHR.cleaned.bam 2>&1 >> realignment.$CHR.output
+ -targetIntervals $INP$CHR.forRealigner.intervals \
+ -o $INP$CHR.cleaned.bam 2>&1 >> $DATAPATH/realignment$CHR.output
 
 # Need to implement for known-only/lane level cleaning?
 
-rm -f $INP.$CHR.forRealigner.intervals
+rm -f $INP$CHR.forRealigner.intervals
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" realignment.*.output pipeline.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/realignment"$CHR".output "$DATAPATH"/pipeline.output` != "" ]]
 then
-	echo "IndelRealigner FAILED"
+	echo "${CHR}IndelRealigner FAILED"
 	exit 1
 fi
 
-$FIXMATE INPUT=$INP.$CHR.cleaned.bam OUTPUT=$INP.$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT 2>&1 >> realignment.$CHR.output
+$FIXMATE INPUT=$INP$CHR.cleaned.bam OUTPUT=$INP$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT 2>&1 >> $DATAPATH/realignment$CHR.output
 
-rm -f $INP.$CHR.cleaned.bam
+rm -f $INP$CHR.cleaned.bam
 
 if [[ $? != 0 ]]
 then
-	echo "Realigning: Call to FixMate FAILED"
+	echo "${CHR}Realigning: Call to FixMate FAILED"
 	exit 1
 fi
 
-$SAMTOOLS index $INP.$CHR.fixed.bam 2>&1 >> realignment.$CHR.output
+$SAMTOOLS index $INP$CHR.fixed.bam 2>&1 >> $DATAPATH/realignment$CHR.output
 
 if [[ $? != 0 ]]
 then
-	echo "Realigning: Samtools indexing FAILED"
+	echo "${CHR}Realigning: Samtools indexing FAILED"
 	exit 1
 fi
 
-echo "$0: samtools index complete"
+echo "${CHR}: samtools index complete"
 

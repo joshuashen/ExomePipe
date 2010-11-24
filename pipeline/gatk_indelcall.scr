@@ -6,14 +6,15 @@
 # Perform low-coverage indel calls
 # Load all samples from chromosome in a single $INP bam file
 
-HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
-CHRFILE="./chrdb"
+GLOBAL="global_config.sh"
 
-INP=""
-CHR=""
-REF=""
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> [-L \"#:#-#\"]"
 
@@ -33,23 +34,24 @@ then
         exit 1
 fi
 
-if [[ $CHR == "" ]]
+CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
+
+if [[ $CHR != "" ]]
 then
-	CHR="${SGE_TASK_ID}"
-fi
-if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-then
-        CHR="chr${CHR}"
+        if [[ `grep chr $CHR` == "" && -n $CHR_NAME ]]
+        then
+                CHR="chr${CHR}"
+        fi
 fi
 
 $GATK \
  -L $CHR \
  -T IndelGenotyperV2 \
  -R $REF \
- -I $INP.$CHR.recalibrated.bam \
- -bed $INP.$CHR.indels.raw.bed \
- -verbose $INP.$CHR.detailed.output.bed \
- -o $INP.$CHR.output.vcf 2>&1 > indelcalling.$CHR.output
+ -I $INP \
+ -bed $INP.indels.raw.bed \
+ -verbose $INP.detailed.output.bed \
+ -o $INP.output.vcf
 
  
 #-minCnt 2 \

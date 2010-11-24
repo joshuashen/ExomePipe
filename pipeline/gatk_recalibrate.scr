@@ -6,19 +6,17 @@
 # INPUT:	Run with a single read-group/lane in $INP.list
 # OUTPUT:	$INP.$CHR.recalibrated.bam recalibrated bam file
 
-HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
-SAMTOOLS="/ifs/home/c2b2/ip_lab/yshen/usr/bin/samtools"
-CHRFILE="./chrdb"
+GLOBAL="global_config.sh"
 
-INP=""
-CHR=""
-REF=""
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> \"#:#-#\"]"
-ERRORMESSAGE="#### ERROR"
-ERRORMESSAGE1="The following error has occurred"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -L \"#:#-#\"]"
 
 while getopts I:L:R:h o
 do      case "$o" in
@@ -36,33 +34,33 @@ then
         exit 1
 fi
 
-if [[ $CHR == "" ]]
-then
-	CHR="$SGE_TASK_ID"
-fi
+CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
 
-if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+if [[ $CHR != "" ]]
 then
-        CHR="chr${CHR}"
+        if [[ `grep chr $CHR` == "" && -n $CHR_NAME ]]
+        then
+                CHR="chr${CHR}"
+        fi
 fi
 
 $GATK \
  -L $CHR \
  -R $REF \
  -T TableRecalibration \
- -I $INP.$CHR.fixed.bam \
- -recalFile $INP.$CHR.recal_data.csv \
- --out $INP.$CHR.recalibrated.bam 2>&1 > recalibrate.$CHR.output
+ -I $INP \
+ -recalFile $INP.recal_data.csv \
+ --out $INP.recalibrated.bam
 
-if [[ $? != 0 || `grep "$ERRORMESSAGE" recalibrate.*.output pipeline.output` != "" ]]
+if [[ $? != 0 || `grep "$ERRORMESSAGE" recalibrate.output pipeline.output` != "" ]]
 then
         echo "Recalibration FAILED"
         exit 1
 fi
 
-rm -f $INP.$CHR.fixed.bam $INP.$CHR.fixed.bam.bai
+rm -f $INP $INP.bai
 
-$SAMTOOLS index $INP.$CHR.recalibrated.bam 2>&1 >> recalibrate.$CHR.output
+$SAMTOOLS index $INP.recalibrated.bam
 
 if [[ $? != 0 ]]
 then

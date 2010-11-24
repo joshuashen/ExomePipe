@@ -6,15 +6,15 @@
 # INPUT:	Run with a single read-group/lane in $INP.list
 # OUTPUT:	$INP.recal_data.csv recalibrate info file
 
-HEAP=4000
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir=/ifs/scratch/c2b2/ip_lab/ag2671/tmp"
-GATK="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/Sting/dist/GenomeAnalysisTK.jar"
-CHRFILE="./chrdb"
+GLOBAL="global_config.sh"
 
-INP=""
-CHR=""
-REF=""
-DBSNP=""
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
 
@@ -35,26 +35,26 @@ then
         exit 1
 fi
 
-if [[ $CHR == "" ]]
-then
-	CHR="$SGE_TASK_ID"
-fi
+CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
 
-if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
+if [[ $CHR != "" ]]
 then
-        CHR="chr${CHR}"
+        if [[ `grep chr $CHR` == "" && -n $CHR_NAME ]]
+	then
+        	CHR="chr${CHR}"
+	fi
 fi
 
 $GATK \
  -L $CHR \
  -R $REF \
  --DBSNP $DBSNP \
- -I $INP.$CHR.fixed.bam \
+ -I $INP \
  -T CountCovariates \
  -cov ReadGroupCovariate \
  -cov QualityScoreCovariate \
  -cov CycleCovariate \
  -cov DinucCovariate \
- -recalFile $INP.$CHR.recal_data.csv 2>&1 > calibrate.$CHR.output
+ -recalFile $INP.recal_data.csv
 
 # [-B:mask,VCF sitesToMask.vcf] \
