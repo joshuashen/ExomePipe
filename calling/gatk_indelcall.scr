@@ -10,28 +10,42 @@ HEAP=4000
 
 INP=""
 CHR=""
-REF=""
+TEMP=""
+GLOBAL=""
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> [-L \"#:#-#\"]"
 
-while getopts I:L:R:g:h o
+while getopts I:L:t:g:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
-        R)      REF="$OPTARG";;
+        t)      TEMP="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
 done
 
-if [[ $INP == "" || $REF == "" ]]
+if [[ $INP == "" || $GLOBAL == "" || $TEMP == "" ]]
 then
         echo $USAGE
         exit 1
 fi
 
 . $GLOBAL
+
+if [ $JOB_ID == "" ]; then
+    JOB_ID="Indelcalling"
+fi
+
+# JOB_ID is the qsub job ID
+TEMP=$TEMP"/"$JOB_ID"/"
+
+if [ ! -d $TEMP ]; 
+    then    
+    mkdir -p $TEMP
+fi
+
 
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
@@ -40,10 +54,18 @@ $GATK \
  -T IndelGenotyperV2 \
  -R $REF \
  -I $INP \
- -bed $INP.indels.raw.bed \
- -verbose $INP.detailed.output.bed \
- -o $INP.indel-output.vcf
- 
+ -bed $INP.indels.brief.bed \
+ -verbose $INP.indels.verbose.bed \
+ -o $INP.indels.vcf \
+ --window_size 300
+
+if [[ $? == 0 ]]
+    then
+    echo "indel calling complete"
+fi
+
+rm -rf $TEMP
+
 #-minCnt 2 \
 #-minFraction 0.03 \
 #-minConsensusFraction 0.6 \

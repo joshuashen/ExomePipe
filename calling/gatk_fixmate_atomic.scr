@@ -15,6 +15,28 @@ HEAP=3000
 
 . $GLOBAL
 
+
+if [[ $CHR == "" ]]
+    then
+    echo "no chr prodived"
+    exit 1
+fi
+if [[ $CHR == "23" ]]
+    then
+    CHR="X"
+fi
+if [[ $CHR == "24"  ]]
+    then
+    CHR="Y"
+fi
+if [[ $REFTYPE == "hg" ]] 
+    then
+    CHR="chr${CHR}"
+fi
+
+echo $CHR
+
+
 OUTDIR=$INP"_pipe"
 if [ ! -d $OUTDIR ]; then
   mkdir $OUTDIR
@@ -27,3 +49,6 @@ FIXMATE="$JAVA -jar ${PICARD}/FixMateInformation.jar"
 $FIXMATE INPUT=$OUTDIR/$CHR.cleaned.bam OUTPUT=$OUTDIR/$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT
 
 echo "fixmate complete"
+
+rm -f $OUTDIR/$CHR.cleaned.bam
+

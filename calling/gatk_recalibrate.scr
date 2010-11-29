@@ -13,23 +13,27 @@ HEAP=4000
 INP=""
 CHR=""
 REF=""
+OUTPUT=""
+TEMP=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -g <global config> \"#:#-#\"]"
 ERRORMESSAGE="#### ERROR"
 ERRORMESSAGE1="The following error has occurred"
 
-while getopts I:L:R:g:h o
-do      case "$o" in
-        I)      INP="$OPTARG";;
-        L)      CHR="$OPTARG";;
-        R)      REF="$OPTARG";;
-        g)      GLOBAL="$OPTARG";;
-        h)      echo $USAGE
-                exit 1;;
-        esac
+while getopts I:L:g:t:o:h opt
+  do     
+  case "$opt" in
+      I)      INP="$OPTARG";;
+      L)      CHR="$OPTARG";;
+      g)      GLOBAL="$OPTARG";;
+      t)      TEMP="$OPTARG";;
+      o)      OUTPUT="$OPTARG";;
+      h)      echo $USAGE
+	  exit 1;;
+  esac
 done
 
-if [[ $INP == "" || $REF == ""  ]]
+if [[ $INP == "" || $GLOBAL == "" ]]
 then
         echo $USAGE
         exit 1
@@ -37,46 +41,52 @@ fi
 
 . $GLOBAL
 
+# JOB_ID is the qsub job ID
+if [ ! -d $TEMP ]; then
+    mkdir -p $TEMP
+fi
+
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
-# if [[ `grep -x \`basename "$REF"\` "$CHRFILE"` == "" ]]
-# then
-#        CHR="chr${CHR}"
-# fi
+if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                            
+    then
+    cat $ExonFile | awk '{ print $1":"$2"-"$3}' > $TEMP"/target.list"
+else
+    cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > $TEMP"/target.list"
+fi
 
+Targets=$TEMP"/target.list"
 
 $GATK \
- -R $REF \
- --DBSNP $DBSNP \
- -I $INP \
- -nt 4 \
- -T CountCovariates \
- -cov ReadGroupCovariate \
- -cov QualityScoreCovariate \
- -cov CycleCovariate \
- -cov DinucCovariate \
- -recalFile $INP.recal_data.csv
+    -R $REF \
+    --DBSNP $DBSNP \
+    -I $INP \
+    -L $Targets \
+    -nt 4 \
+    -T CountCovariates \
+    -cov ReadGroupCovariate \
+    -cov QualityScoreCovariate \
+    -cov CycleCovariate \
+    -cov DinucCovariate \
+    -recalFile $INP.recal_data.csv
 
 # [-B:mask,VCF sitesToMask.vcf] \
 
-
-
-$GATK \
- -R $REF \
- -T TableRecalibration \
- -I $INP \
- -recalFile $INP.recal_data.csv \
- --out $INP.recalibrated.bam 
-
-
-$SAMTOOLS index $INP.recalibrated.bam 
-
-if [[ $? != 0 ]]
-then
-        echo "Recalibration: Samtools indexing FAILED"
-        exit 1
+if [[ $OUTPUT == ""  ]]
+    then
+    OUTPUT=$INP.recalibrated.bam
 fi
 
-echo "$0: samtools index complete"
+$GATK \
+    -R $REF \
+    -T TableRecalibration \
+    -I $INP \
+    -recalFile $INP.recal_data.csv \
+    --out $OUTPUT
+
+
+$SAMTOOLS index $OUTPUT
+
+echo "recalibration complete"
 

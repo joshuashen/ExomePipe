@@ -8,58 +8,62 @@ HEAP=4000
 
 INP=""
 CHR=""
-REF=""
 List=""
 ExonFile=""
+TEMP=""
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \"#:#-#\"] [-E <ExonFile>]"
 EXONUSAGE="Please specify either the file containing the interval list using -E or the sequences using -L"
 
-while getopts I:L:E:R:g:h o
+while getopts I:L:g:t:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
-        L)      List="$OPTARG";;
-        R)      REF="$OPTARG";;
-        E)      ExonFile="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
+        t)      TEMP="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
 done
 
-. $GLOBAL
-
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
-GATK="$JAVA -jar "${GATKJAR}
-
-
-if [[ $INP == "" || $REF == "" ]]
+if [[ $INP == "" || $GLOBAL == "" || $TEMP == "" ]]
 then
         echo $USAGE
         exit 1
 fi
 
-if [[ $ExonFile == "" ]]
-then
-	echo $EXONUSAGE
-	exit 1
+. $GLOBAL
+
+
+# JOB_ID is the qsub job ID
+if [ $JOB_ID == "" ]; then
+    JOB_ID="depth"
 fi
 
+TEMP=$TEMP"/"$JOB_ID"/"
 
-if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                            
-                                                                           
-    then
-    
-    cat $ExonFile | awk '{ print $1":"$2"-"$3}' > "$INP.target.list"
-
-else
-
-    cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "$INP.target.list"
+if [ ! -d $TEMP ]; 
+    then    
+    mkdir -p $TEMP
 fi
 
-
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
 
 CHR="$INP.target.list"
+
+if [ ! -e $CHR ]
+    then
+    
+    if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                            
+	then
+	cat $ExonFile | awk '{ print $1":"$2"-"$3}' > "$INP.target.list"
+    else
+	cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "$INP.target.list"
+    fi
+fi
+
+
+
 	
 $GATK \
  -T DepthOfCoverage \
@@ -68,6 +72,8 @@ $GATK \
  -I $INP \
  -o $INP.coverage
 
+rm -rf $TEMP
+
+echo "depth of coverage complete"
 
 # Could possibly include these
-

@@ -10,25 +10,22 @@ HEAP=4000
 
 INP=""
 CHR=""
-REF=""
-DBSNP=""
 GLOBAL=""
+TEMP=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> -D <DBSNP file> [-L \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -g <global config> [-L \"#:#-#\"]"
 
-while getopts I:L:R:D:g:h o
+while getopts I:t:g:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
-        L)      CHR="$OPTARG";;
-        R)      REF="$OPTARG";;
-        D)      DBSNP="$OPTARG";;
+        t)      TEMP="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
 done
 
-if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
+if [[ $INP == "" || $GLOBAL == "" || $TEMP == ""  ]]
 then
         echo $USAGE
         exit 1
@@ -36,10 +33,21 @@ fi
 
 . $GLOBAL
 
+if [ $JOB_ID == "" ]; then
+    JOB_ID="SNPcalling"
+fi
+
+# JOB_ID is the qsub job ID
+TEMP=$TEMP"/"$JOB_ID"/"
+
+if [ ! -d $TEMP ]; 
+    then    
+    mkdir -p $TEMP
+fi
+
+
 JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
-
-
 
 
 $GATK \
@@ -57,3 +65,6 @@ $GATK \
 #-pl $Platform
 #-A DepthOfCoverage \
 #set call conf based on whether it's deep or low pass data
+
+rm -rf $TEMP
+echo "SNP calling complete"

@@ -6,35 +6,28 @@
 # Run with all samples from a single chromosome together in $INP.list
 
 HEAP=4000
-TEMP="/ifs/scratch/c2b2/af_lab/saec/temp/"
+### TEMP="/ifs/scratch/c2b2/af_lab/saec/temp/"
 INP=""
 CHR=""
-REF=""
-DBSNP=""
-RMODE="0"  # default is not in batch mode
-maxsize=130000000
-SIZE=0 
+MEM=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file> [-L \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -L <Chromosome> -g <global config> [-m heap_memory]"
 ERRORMESSAGE="#### ERROR"
 ERRORMESSAGE1="The following error has occurred"
 
-while getopts I:L:R:D:g:m:s:h o
+while getopts I:L:m:g:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
-        R)      REF="$OPTARG";;
-        D)      DBSNP="$OPTARG";;
+        m)      MEM="$OPTARG";;
         g)      GLOBAL="$OPTARG";;  # global config
-        m)      RMODE="$OPTARG";;  # running mode; none-zero means running in batch mode
-        s)      SIZE="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
 done
 
 
-if [[ $INP == ""  || $REF == "" || $DBSNP == "" || $GLOBAL == "" ]]
+if [[ $INP == ""  || $GLOBAL == "" ]]
 then
         echo $USAGE
         exit 1
@@ -42,23 +35,30 @@ fi
 
 . $GLOBAL
 
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
-GATK="$JAVA -jar "${GATKJAR}
-
-# FIXMATE="$JAVA -jar /ifs/data/c2b2/ip_lab/shares/SOFTWARE/picard-tools-1.29/FixMateInformation.jar"
-FIXMATE="$JAVA -jar ${PICARD}/FixMateInformation.jar" 
-
-# /ifs/home/c2b2/af_lab/saec/Software/picard-tools-1.33/FixMateInformation.jar"
-# SAMTOOLS="/ifs/home/c2b2/ip_lab/yshen/usr/bin/samtools"
+if [ ! $MEM == "" ]
+    then
+    HEAP=$MEM
+fi
 
 OUTDIR=$INP"_pipe"
 if [ ! -d $OUTDIR ]; then
-  mkdir $OUTDIR
+    mkdir $OUTDIR
 fi
 
+if [ $JOB_ID == "" ]; then
+    JOB_ID=$CHR
+fi
+ 
+# JOB_ID is the qsub job ID
+TEMP=$OUTDIR"/temp/"$JOB_ID"/"
 
-# split a chromosome into two if the size is larger than 170M
+if [ ! -d $TEMP ]; then
+    mkdir -p $TEMP
+fi
 
+JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+GATK="$JAVA -jar "${GATKJAR}
+FIXMATE="$JAVA -jar ${PICARD}/FixMateInformation.jar" 
 
 if [[ $CHR == "" ]]
     then
@@ -99,12 +99,24 @@ $GATK \
     -o $OUTDIR/$CHR.cleaned.bam 
 
 # Need to implement for known-only/lane level cleaning?
-echo "realign complete"
+if [[ $? == 0 ]]
+    then
+    echo "local realign complete"
+else
+    echo "local realign failed"
+    exit 1
+fi
 
 $FIXMATE INPUT=$OUTDIR/$CHR.cleaned.bam OUTPUT=$OUTDIR/$CHR.fixed.bam SO=coordinate VALIDATION_STRINGENCY=SILENT 
 
 
-echo "fixmate complete"
-
-rm -f $OUTDIR/$CHR.cleaned.bam
+if [[ $? == 0 ]]
+    then
+    rm -f $OUTDIR/$CHR.cleaned.bam
+    echo "fixmate complete"
+else
+    echo "fixmate failed"
+    exit 1
+fi
 # rm -rf $OUTDIR/$CHR.realign.*
+rm -fr $TEMP

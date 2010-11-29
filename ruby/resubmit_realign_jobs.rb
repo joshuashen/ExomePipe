@@ -15,6 +15,16 @@ def main
   checklist = ARGV[0]
   global = ARGV[1]
   refix = ARGV[2]
+  realign=ARGV[3]
+
+  if refix==nil
+    refix="/ifs/home/c2b2/af_lab/saec/code/ExomePipe/calling/gatk_fixmate_atomic.scr"
+  end
+
+  if realign==nil
+    realign="/ifs/home/c2b2/af_lab/saec/code/ExomePipe/calling/gatk_realign_atomic.scr"
+  end
+
 
   File.new(checklist, 'r').each do |line|
     line.chomp
@@ -34,26 +44,15 @@ def main
 #      puts "#{jobstdout}\t#{jobstderr}"
       cmd="grep \'net.sf.picard.sam.FixMateInformation done\' #{jobstderr}"
       complete = `#{cmd}`
-#      puts cmd
+      #      puts cmd
       if complete == ""  # not complete in fixmate
-        # then check if realign is complete
-        runtimec  = `grep \'Total runtime\' #{jobstdout}`  # 
-#        puts "#{bam}\t#{runtimec}"
-        
-        if runtimec.split(/\n/).size == 2  # realign is finished
-          $stderr.puts "#{bam}\t#{runtimec.split(/\n/).size}"
-          # therefore we only need to re-do fixmate
-          cmd="qsub -N #{bam}.#{chr}.fixmate -l mem=3.5G,time=28:: -o #{jobstdout}.new -e #{jobstderr}.new #{refix} -I #{bam} -L #{chr} -g #{global}"
-          puts cmd
-          system(cmd)
-        else
-          $stderr.puts "need to start from scratch for #{bam}"
-        end
+        cmd="qsub -N #{bam}.#{chr}.realign -l mem=5G,time=48:: -o #{jobstdout}.new -e #{jobstderr}.new #{realign} -I #{bam} -L #{chr} -g #{global}"
+        puts cmd
       end
+      
     end
   end
 end
-
 
 
 main()
