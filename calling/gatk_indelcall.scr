@@ -12,14 +12,16 @@ INP=""
 CHR=""
 TEMP=""
 GLOBAL=""
+MEM=""
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> [-L \"#:#-#\"]"
 
-while getopts I:L:t:g:h o
+while getopts I:L:t:g:m:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
         t)      TEMP="$OPTARG";;
+        m)      MEM="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
@@ -33,6 +35,12 @@ then
 fi
 
 . $GLOBAL
+
+if [ ! $MEM == "" ]
+    then
+    HEAP=$MEM
+fi
+
 
 if [ $JOB_ID == "" ]; then
     JOB_ID="Indelcalling"
@@ -51,13 +59,13 @@ JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
 $GATK \
- -T IndelGenotyperV2 \
- -R $REF \
- -I $INP \
- -bed $INP.indels.brief.bed \
- -verbose $INP.indels.verbose.bed \
- -o $INP.indels.vcf \
- --window_size 300
+    -T IndelGenotyperV2 \
+    -R $REF \
+    -I $INP \
+    -bed $INP.indels.brief.bed \
+    -verbose $INP.indels.verbose.bed \
+    -o $INP.indels.vcf \
+    --window_size 300 
 
 if [[ $? == 0 ]]
     then

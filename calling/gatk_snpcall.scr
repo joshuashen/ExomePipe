@@ -12,14 +12,16 @@ INP=""
 CHR=""
 GLOBAL=""
 TEMP=""
+MEM=""
 
 USAGE="Usage: $0 -I <Input bam file> -g <global config> [-L \"#:#-#\"]"
 
-while getopts I:t:g:h o
+while getopts I:t:g:m:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         t)      TEMP="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
+        m)      MEM="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
@@ -32,6 +34,12 @@ then
 fi
 
 . $GLOBAL
+
+
+if [ ! $MEM == "" ]
+    then
+    HEAP=$MEM
+fi
 
 if [ $JOB_ID == "" ]; then
     JOB_ID="SNPcalling"
@@ -67,4 +75,8 @@ $GATK \
 #set call conf based on whether it's deep or low pass data
 
 rm -rf $TEMP
-echo "SNP calling complete"
+
+if [ $? == 0 ]
+    then
+    echo "SNP calling complete"
+fi

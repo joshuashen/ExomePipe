@@ -79,18 +79,23 @@ fi
 
 
 date
-echo "qsub depth"
+cmd="qsub -N depth.$INP -l mem=9G,time=24:: -o $OUTDIR/log.depth.o -e $OUTDIR/log.depth.e ${BPATH}/gatk_depthofcoverage.scr  -g $GLOBAL -I $OUTDIR/all.recalibrated.bam -t $TEMP  -m 8000"
+echo $cmd
 
-qsub -N depth.$INP -l mem=8G,time=24:: -o $OUTDIR/log.depth.o -e $OUTDIR/log.depth.e ${BPATH}/gatk_depthofcoverage.scr  -g $GLOBAL -I $OUTDIR/all.recalibrated.bam -t $TEMP 
-
-date
-echo "qsub indel"
-qsub -N indel.$INP -l mem=8G,time=24::  -o $OUTDIR/log.indel.o -e $OUTDIR/log.indel.e  ${BPATH}/gatk_indelcall.scr  -g $GLOBAL -I $OUTDIR/all.recalibrated.bam -t $TEMP
+$cmd
 
 
 date
-echo "qsub snp"
-qsub -N snp.$INP -l mem=8G,time=24:: -o $OUTDIR/log.snp.o -e $OUTDIR/log.snp.e  ${BPATH}/gatk_snpcall.scr  -g $GLOBAL -I $OUTDIR/all.recalibrated.bam -t $TEMP
+
+cmd="qsub -N indel.$INP -l mem=9G,time=24::  -o $OUTDIR/log.indel.o -e $OUTDIR/log.indel.e  ${BPATH}/gatk_indelcall.scr  -g $GLOBAL -I $OUTDIR/all.recalibrated.bam -t $TEMP -m 8000"
+echo $cmd
+$cmd
+
+date
+cmd="qsub -N snp.$INP -l mem=9G,time=24:: -o $OUTDIR/log.snp.o -e $OUTDIR/log.snp.e  ${BPATH}/gatk_snpcall.scr  -g $GLOBAL -I $OUTDIR/all.recalibrated.bam -t $TEMP -m 8000"
+echo $cmd
+$cmd
+
 
 exit 0
 

@@ -11,15 +11,17 @@ CHR=""
 List=""
 ExonFile=""
 TEMP=""
+MEM=""
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \"#:#-#\"] [-E <ExonFile>]"
 EXONUSAGE="Please specify either the file containing the interval list using -E or the sequences using -L"
 
-while getopts I:L:g:t:h o
+while getopts I:L:g:t:m:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
         t)      TEMP="$OPTARG";;
+        m)      MEM="$OPTARG";;
         h)      echo $USAGE
                 exit 1;;
         esac
@@ -32,6 +34,11 @@ then
 fi
 
 . $GLOBAL
+
+if [ ! $MEM == "" ]
+    then
+    HEAP=$MEM
+fi
 
 
 # JOB_ID is the qsub job ID
@@ -74,6 +81,9 @@ $GATK \
 
 rm -rf $TEMP
 
-echo "depth of coverage complete"
+if [ $? == 0 ]
+    then
+    echo "depth of coverage complete"
+fi
 
 # Could possibly include these

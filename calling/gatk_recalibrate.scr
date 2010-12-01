@@ -69,7 +69,8 @@ $GATK \
     -cov QualityScoreCovariate \
     -cov CycleCovariate \
     -cov DinucCovariate \
-    -recalFile $INP.recal_data.csv
+    -recalFile $INP.recal_data.csv  \
+    --max_reads_at_locus 20000
 
 # [-B:mask,VCF sitesToMask.vcf] \
 
