@@ -1,0 +1,52 @@
+#!/bin/sh
+#$ -cwd
+#$ -l mem=8G,time=16::
+
+GLOBAL="global_config.sh"
+TEMP="temp_file"
+
+rm -f variant_combine.output $TEMP
+
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
+
+USAGE="Usage: $0 -R <Reference Fasta> -V <VCF File list> [-D <DELIMITER>]"
+
+while getopts V:R:D:h o
+do      case "$o" in
+        V)      VCFLIST="$OPTARG";;
+        R)      REF="$OPTARG";;
+        D)      DELIMITER="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $VCFLIST == "" || $REF == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+PARAMETER=`cat $VCFLIST | awk '{n=split($0,a,"/"); split(a[n],b,"_"); print "-B:"b[1]"_"b[2]",VCF " $0}'`
+
+$GATK \
+  -T CombineVariants \
+  -R $REF \
+  -o all_SNPs_output.vcf \
+  -B:foo,VCF /path/to/variants1.vcf \
+  -B:bar,VCF /path/to/variants2.vcf \
+  -variantMergeOptions UNION \
+  -genotypeMergeOptions UNIQUIFY
+
+if [[ $? != 0 || `grep "$ERRORMESSAGE" variant_combine.output` != "" ]]
+then
+	echo "Variants Combine FAILED"
+	exit 1
+fi
+

@@ -1,9 +1,6 @@
 #!/bin/sh
 #$ -cwd
-# Findmem
-
-# Perform initial SNP calling
-# Load all samples from chromosome in a single $INP list file
+# -l mem=6G,time=8::
 
 GLOBAL="global_config.sh"
 

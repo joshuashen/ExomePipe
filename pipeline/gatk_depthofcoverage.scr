@@ -1,6 +1,6 @@
 #!/bin/sh
 #$ -cwd
-# Findmem
+# -l mem=6G,time=8::
 
 GLOBAL="global_config.sh"
 
@@ -71,6 +71,8 @@ then
         echo "Depth of coverage FAILED"
         exit 1
 fi
+
+chmod g=rw $DATAPATH/*
 
 # Could possibly include these
 #-omitBaseOutput \

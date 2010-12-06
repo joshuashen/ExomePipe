@@ -1,0 +1,94 @@
+#!/bin/sh
+#$ -cwd
+#$ -l mem=5G,time=16::
+
+GLOBAL="global_config.sh"
+TEMP="temp_file"
+DELIMITER='_'
+
+rm -f smartmerge.output $TEMP
+
+if [[ -e $GLOBAL ]]
+then
+	. $GLOBAL
+else
+	echo "Global config file not found. Exiting."
+	exit 1
+fi
+
+USAGE="Usage: $0 -R <Reference Fasta> -V <VCF File list> -I <INPUT BAM File List> [-D <DELIMITER>]"
+
+while getopts I:V:R:D:h o
+do      case "$o" in
+	I)      BAM_FILES="$OPTARG";;
+	V)      VCF_FILES="$OPTARG";;
+	R)      REF="$OPTARG";;
+	D)      DELIMITER="$OPTARG";;
+	h)      echo $USAGE
+		exit 1;;
+	esac
+done
+
+if [[ $VCF_FILES == "" || $REF == "" || $BAM_FILES == "" ]]
+then
+	echo $USAGE
+	exit 1
+fi
+
+VCFLIST=vcf.list
+BAMLIST=bam.list
+
+cat $VCF_FILES | sort > $VCFLIST
+cat $BAM_FILES | sort > $BAMLIST
+touch $TEMP
+
+while read -r LINE
+do
+	BASENAME=`basename "$LINE"`
+	GROUPNAME=${BASENAME%%"$DELIMITER"*}
+	if [[ `grep "$GROUPNAME" "$TEMP"` == "" ]]
+	then
+		echo $GROUPNAME >> $TEMP
+	fi
+done < $VCFLIST
+
+while read -r LINE
+do
+	PARAMETER1=`grep $LINE $VCFLIST | awk '{n=split($0,a,"/"); split(a[n],b,"_"); print "-B:batch_"b[2]",vcf " $0}'`
+
+	$GATK \
+	  -T CreateTriggerTrack \
+	  -R $REF \
+	  $PARAMETER1 \
+	  -o batches.trigger.bed.$LINE 2>&1 >> smartmerge.output
+
+	if [[ $? != 0 || `grep "$ERRORMESSAGE" smartmerge.output` != "" ]]
+	then
+		echo "Smart Merge FAILED"
+		exit 1
+	fi
+
+	PARAMETER1=`grep $LINE $VCFLIST | awk '{n=split($0,a,"/"); split(a[n],b,"_"); print "-B:batch"b[2]",vcf " $0}'`
+	PARAMETER=`grep $LINE $VCFLIST | awk '{n=split($0,a,"/"); split(a[n],b,"_"); print "batch"b[2]}'`
+	PARAMETER2=`echo $PARAMETER | tr ' ' ','`
+	PARAMETER3=`grep $LINE $BAMLIST | awk '{print "-I " $0}'`
+
+	$GATK \
+	  -T BatchedCallsMerger \
+	  -R $REF \
+	  $PARAMETER1 \
+	  -rods $PARAMETER2 \
+	  -B:trigger,Bed batches.trigger.bed.$LINE \
+	  $PARAMETER3 \
+	  -varout batches.merged.vcf.$LINE \
+	  -BTI trigger 2>&1 >> smartmerge.output
+
+
+	if [[ $? != 0 || `grep "$ERRORMESSAGE" smartmerge.output` != "" ]]
+	then
+		echo "Smart Merge FAILED"
+		exit 1
+	fi
+
+done < $TEMP
+

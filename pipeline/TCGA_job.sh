@@ -28,5 +28,5 @@ fi
 DATAPATH=`dirname "$INP"`
 rm -f $DATAPATH/*.output
 
-$BPATH/run_pipeline.sh -I $INP -R $REF -E $ExonList -D $DBSNP -P $Platform > $DATAPATH/pipeline.output
+$BPATH/run_pipeline.sh -I $INP -R $TCGA_REF -E $TCGA_List -D $TCGA_DBSNP -P $TCGA_Platform > $DATAPATH/pipeline.output
 
