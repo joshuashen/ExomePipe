@@ -28,5 +28,5 @@ fi
 DATAPATH=`dirname "$INP"`
 rm -f $DATAPATH/*.output
 
-$BPATH/run_pipeline.sh -I $INP -R $REF -E $ExonList -D $DBSNP -P $Platform > $DATAPATH/pipeline.output
+$BPATH/run_pipeline.sh -I $INP -R $YALE_REF -E $YALE_List -D $YALE_DBSNP -P $YALE_Platform > $DATAPATH/pipeline.output
 

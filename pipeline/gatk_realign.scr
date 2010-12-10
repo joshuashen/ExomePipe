@@ -1,9 +1,6 @@
 #!/bin/sh
 #$ -cwd
-# -l mem=8G,time=4::
-
-# Realign reads locally around indels
-# Run with all samples from a single chromosome together in $INP.list
+# -l mem=8G,time=16::
 
 GLOBAL="global_config.sh"
 

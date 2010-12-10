@@ -1,9 +1,6 @@
 #!/bin/sh
 #$ -cwd
-
-# Merge multiple VCF files into a single file
-# Pass a quoted ls style string as $1 and the output filename as $2
-# Example: bash gatk_merge.scr "test.chr*.vcf" test.all.vcf
+# -l mem=2G,time=4::
 
 GLOBAL="global_config.sh"
 
@@ -15,22 +12,21 @@ else
         exit 1
 fi
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -C <Contig Order> -O <CONTIG_INP_ORDER>"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -C <Contig Order> -O <CONTIG_INP_ORDER> -B <CONTIG_INP_BAI_ORDER>"
 
-while getopts I:R:C:O:h o
+while getopts I:R:C:O:B:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         R)      REF="$OPTARG";;
         C)      CONTIG="$OPTARG";;
         O)      CONTIG_INP="$OPTARG";;
+        B)      CONTIG_INP_BAI="$OPTARG";;
         h)      echo $USAGE h
                 exit 1;;
         esac
 done
-echo $CONTIG
-echo $CONTIG_INP
 
-if [[ $INP == "" || $REF == "" || $CONTIG == "" || $CONTIG_INP == "" ]]
+if [[ $INP == "" || $REF == "" || $CONTIG == "" || $CONTIG_INP == "" || $CONTIG_INP_BAI == "" ]]
 then
         echo $USAGE
         exit 1
@@ -40,6 +36,8 @@ DATAPATH=`dirname "$INP"`
 
 $SAMTOOLS merge -r $INP $CONTIG_INP
 $SAMTOOLS index $INP
+rm -f $CONTIG_INP $CONTIG_INP_BAI
+
 for i in $CONTIG
 do
 	cat $DATAPATH/realignment$i.output >> $DATAPATH/realignment.output

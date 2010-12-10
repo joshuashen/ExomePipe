@@ -1,0 +1,70 @@
+#!/bin/sh
+#$ -cwd
+# -l mem=5G,time=4::
+
+GLOBAL="global_config.sh"
+
+if [[ -e $GLOBAL ]]
+then
+        . $GLOBAL
+else
+        echo "Global config file not found. Exiting."
+        exit 1
+fi
+
+USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> -D <DBSNP file>"
+
+while getopts I:D:R:h o
+do      case "$o" in
+        I)      INP="$OPTARG";;
+        D)      DBSNP="$OPTARG";;
+        R)      REF="$OPTARG";;
+        h)      echo $USAGE
+                exit 1;;
+        esac
+done
+
+if [[ $INP == "" || $REF == "" || $DBSNP == "" ]]
+then
+        echo $USAGE
+        exit 1
+fi
+
+DATAPATH=`dirname "$INP"`
+
+$GATK \
+  -R $REF \
+  -T CombineVariants \
+  -variantMergeOptions UNION \
+  -B:raw,VCF $INP.snps.raw.vcf \
+  -B:filtered,VCF $INP.snps.filtered.vcf \
+  -priority raw,filtered \
+  -o $INP.merged.vcf
+
+if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/compute_ratio.output "$DATAPATH"/pipeline.output` != "" ]]
+then
+	echo "CombineVariants FAILED"
+	exit 1
+fi
+
+$GATK \
+     -T VariantEval \
+     -R $REF \
+     -D $DBSNP \
+     -select 'set=="Intersection"' -selectName Intersection \
+     -select 'set=="RAW"' -selectName RAW \
+     -select 'set=="filterInFILTERED-RAW"' -selectName InRAW-FilteredInFILTERED \
+     -select 'set=="FILTERED"' -selectName FILTERED \
+     -select 'set=="FILTERED-filterInRAW"' -selectName InFILTERED-FilteredInRAW \
+     -select 'set=="FilteredInAll"' -selectName FilteredInAll \
+     -reportType R \
+     -reportLocation $INP.merged.eval \
+     -B:eval,VCF $INP.merged.vcf \
+     -l INFO
+
+if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/compute_ratio.output "$DATAPATH"/pipeline.output` != "" ]]
+then
+	echo "VariantEval ratio compute FAILED"
+	exit 1
+fi
+
