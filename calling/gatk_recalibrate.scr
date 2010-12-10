@@ -20,13 +20,14 @@ USAGE="Usage: $0 -I <Input bam file> -g <global config> \"#:#-#\"]"
 ERRORMESSAGE="#### ERROR"
 ERRORMESSAGE1="The following error has occurred"
 
-while getopts I:L:g:t:o:h opt
+while getopts I:L:m:g:t:o:h opt
   do     
   case "$opt" in
       I)      INP="$OPTARG";;
       L)      CHR="$OPTARG";;
       g)      GLOBAL="$OPTARG";;
       t)      TEMP="$OPTARG";;
+      m)      MEM="$OPTARG";;
       o)      OUTPUT="$OPTARG";;
       h)      echo $USAGE
 	  exit 1;;
@@ -40,6 +41,11 @@ then
 fi
 
 . $GLOBAL
+
+if [ ! $MEM == "" ]
+    then
+    HEAP=$MEM
+fi
 
 # JOB_ID is the qsub job ID
 if [ ! -d $TEMP ]; then
@@ -63,14 +69,13 @@ $GATK \
     --DBSNP $DBSNP \
     -I $INP \
     -L $Targets \
-    -nt 4 \
+    -nt 2 \
     -T CountCovariates \
     -cov ReadGroupCovariate \
     -cov QualityScoreCovariate \
     -cov CycleCovariate \
     -cov DinucCovariate \
-    -recalFile $INP.recal_data.csv  \
-    --max_reads_at_locus 20000
+    -recalFile $INP.recal_data.csv
 
 # [-B:mask,VCF sitesToMask.vcf] \
 

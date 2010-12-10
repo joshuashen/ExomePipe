@@ -20,6 +20,7 @@ def main
      ["--help", "-h", GetoptLong::NO_ARGUMENT],
      ["--gaps", "-g", GetoptLong::OPTIONAL_ARGUMENT],
      ["--qualtrim", "-q", GetoptLong::OPTIONAL_ARGUMENT],
+     ["--samplename", "-m", GetoptLong::REQUIRED_ARGUMENT],
      ["--bwa", "-b", GetoptLong::OPTIONAL_ARGUMENT]
   )
   
@@ -33,6 +34,8 @@ def main
     $stderr.puts "Note: mapping paired reads requires -p argument."
     exit
   end
+
+  sampleName = optHash["--samplename"] # useful for specifying SM meta tag by bwa
 
   if optHash.key?("--reference") 
     ref = optHash["--reference"]
@@ -50,7 +53,8 @@ def main
   if optHash.key?("--bwa")
     bwa = File.expand_path(optHash["--bwa"])
   else
-    bwa = "/ifs/data/c2b2/ip_lab/shares/SOFTWARE/bwa_titan/bwa"
+   # bwa = "/ifs/data/c2b2/ip_lab/shares/SOFTWARE/bwa_titan/bwa"
+    bwa = "/ifs/home/c2b2/ip_lab/yshen/usr/bin/bwa"
   end
 
 ## todo: optionally provide samtools location through command line.
@@ -74,25 +78,28 @@ def main
   
   system(cmd)
 
+  readgroup=File.basename(f1)
   if f2 != nil # paired 
     cmd="#{bwa} aln -t #{threads} #{options}  #{ref} #{f2} > #{f2}.sai" 
     system(cmd)
 
     #### map
     output = File.dirname(File.expand_path(f1)) + "/" +   getPrefix(File.basename(f1)) + ".aligned.bam"
-    cmd = "#{bwa} sampe #{ref} #{f1}.sai #{f2}.sai #{f1} #{f2} | #{samtools} view -bS -o #{output}  - "
+
+    cmd = "#{bwa} sampe -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f2}.sai #{f1} #{f2} | #{samtools} view -bS -o #{output}  - "
     system(cmd)
-    ## sort and index the BAM file
-    cmd= "#{samtools} sort #{output} #{output}.sorted"
+    ## sort and index the BAM file, 
+    # sort -m 4000000 gives the program max 4G mem, probably making fewer temporary files (default is 0.5G)
+    cmd= "#{samtools} sort -m 4000000000  #{output} #{output}.sorted"
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
   else # single reads
     output = f1 + ".bam"
-    cmd = "#{bwa} samse #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
+    cmd = "#{bwa} samse -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
 # We need to make a function for this.
-    cmd= "#{samtools} sort #{output} #{output}.sorted"
+    cmd= "#{samtools} sort  -m 4000000000 #{output} #{output}.sorted"
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
