@@ -21,6 +21,7 @@ def main
      ["--gaps", "-g", GetoptLong::OPTIONAL_ARGUMENT],
      ["--qualtrim", "-q", GetoptLong::OPTIONAL_ARGUMENT],
      ["--samplename", "-m", GetoptLong::REQUIRED_ARGUMENT],
+     ["--platform", "-f", GetoptLong::OPTIONAL_ARGUMENT],
      ["--bwa", "-b", GetoptLong::OPTIONAL_ARGUMENT]
   )
   
@@ -50,6 +51,12 @@ def main
     f2 = nil
   end
  
+  if optHash.key?("--platform")
+    pl = optHash["--platform"]
+  else
+    pl = "illumina"
+  end
+
   if optHash.key?("--bwa")
     bwa = File.expand_path(optHash["--bwa"])
   else
@@ -86,7 +93,7 @@ def main
     #### map
     output = File.dirname(File.expand_path(f1)) + "/" +   getPrefix(File.basename(f1)) + ".aligned.bam"
 
-    cmd = "#{bwa} sampe -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f2}.sai #{f1} #{f2} | #{samtools} view -bS -o #{output}  - "
+    cmd = "#{bwa} sampe -p #{pl} -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f2}.sai #{f1} #{f2} | #{samtools} view -bS -o #{output}  - "
     system(cmd)
     ## sort and index the BAM file, 
     # sort -m 4000000 gives the program max 4G mem, probably making fewer temporary files (default is 0.5G)
@@ -96,7 +103,7 @@ def main
     system(cmd)
   else # single reads
     output = f1 + ".bam"
-    cmd = "#{bwa} samse -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
+    cmd = "#{bwa} samse -p #{pl} -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
 # We need to make a function for this.
     cmd= "#{samtools} sort  -m 4000000000 #{output} #{output}.sorted"
