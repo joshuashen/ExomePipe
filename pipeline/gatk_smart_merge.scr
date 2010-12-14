@@ -60,7 +60,7 @@ do
 	  -T CreateTriggerTrack \
 	  -R $REF \
 	  $PARAMETER1 \
-	  -o batches.trigger.bed.$LINE 2>&1 >> smartmerge.output
+	  -o batches.trigger.bed.$LINE
 
 	if [[ $? != 0 || `grep "$ERRORMESSAGE" smartmerge.output` != "" ]]
 	then
@@ -80,9 +80,8 @@ do
 	  -rods $PARAMETER2 \
 	  -B:trigger,Bed batches.trigger.bed.$LINE \
 	  $PARAMETER3 \
-	  -varout batches.merged.vcf.$LINE \
-	  -BTI trigger 2>&1 >> smartmerge.output
-
+	  --writer batches.merged.vcf.$LINE \
+	  -BTI trigger
 
 	if [[ $? != 0 || `grep "$ERRORMESSAGE" smartmerge.output` != "" ]]
 	then
