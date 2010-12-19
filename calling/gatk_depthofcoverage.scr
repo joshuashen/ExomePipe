@@ -83,6 +83,7 @@ rm -rf $TEMP
 
 if [ $? == 0 ]
     then
+    bzip2 $INP.coverage
     echo "depth of coverage complete"
 fi
 
