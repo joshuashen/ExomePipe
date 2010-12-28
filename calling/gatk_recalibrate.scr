@@ -59,7 +59,7 @@ if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc
     then
     cat $ExonFile | awk '{ print $1":"$2"-"$3}' > $TEMP"/target.list"
 else
-    cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > $TEMP"/target.list"
+    cat $ExonFile |awk '{print $1":"$2"-"$3}' | sed 's/chr//' > $TEMP"/target.list"
 fi
 
 Targets=$TEMP"/target.list"

@@ -58,19 +58,13 @@ GATK="$JAVA -jar "${GATKJAR}
 
 CHR="$INP.target.list"
 
-if [ ! -e $CHR ]
-    then
     
-    if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                            
-	then
-	cat $ExonFile | awk '{ print $1":"$2"-"$3}' > "$INP.target.list"
-    else
-	cat $ExonFile | awk '{split($1,a,"chr"); print a[2] ":" $2 "-" $3}' > "$INP.target.list"
-    fi
+if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                            
+    then
+    cat $ExonFile | awk '{ print $1":"$2"-"$3}' > "$INP.target.list"
+else
+    cat $ExonFile | awk '{print $1":"$2"-"$3}' | sed 's/chr//' > "$INP.target.list"
 fi
-
-
-
 	
 $GATK \
  -T DepthOfCoverage \

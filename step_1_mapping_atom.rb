@@ -97,7 +97,7 @@ def main
     system(cmd)
     ## sort and index the BAM file, 
     # sort -m 4000000 gives the program max 4G mem, probably making fewer temporary files (default is 0.5G)
-    cmd= "#{samtools} sort -m 4000000000  #{output} #{output}.sorted"
+    cmd= "#{samtools} sort -m 3000000000  #{output} #{output}.sorted"
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)
@@ -106,7 +106,7 @@ def main
     cmd = "#{bwa} samse -p #{pl} -i #{readgroup} -l #{readgroup} -m #{sampleName} #{ref} #{f1}.sai #{f1} | #{samtools} view -bS -o #{output} - "
     system(cmd)
 # We need to make a function for this.
-    cmd= "#{samtools} sort  -m 4000000000 #{output} #{output}.sorted"
+    cmd= "#{samtools} sort  -m 3000000000 #{output} #{output}.sorted"
     system(cmd)
     cmd = "#{samtools} index #{output}.sorted.bam"
     system(cmd)

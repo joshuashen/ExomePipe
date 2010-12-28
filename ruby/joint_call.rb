@@ -44,7 +44,7 @@ end
   out=File.new("#{outprefix}chr#{i}.sh", 'w')
   out.puts "\#!/bin/bash \n\#\$ -cwd"
   
-  cmd = "java -Xmx#{heap}m -Djava.io.tmpdir=temp/chr#{i}/  -jar #{setting["gatk"]} -T UnifiedGenotyper  -R #{setting["ref"]}  -D #{setting["dbsnp"]}  -nt 2 -o #{outprefix}Chr#{i}.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov 50 -L #{chrprefix}#{i}"
+  cmd = "java -Xmx#{heap}m -Djava.io.tmpdir=temp/chr#{i}/  -jar #{setting["gatk"]} -T UnifiedGenotyper  -R #{setting["ref"]}  -D #{setting["dbsnp"]}  -nt 2 -o #{outprefix}chr#{i}.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov 50 -L #{chrprefix}#{i}"
 
   bamfiles.each do |bam|
     cmd = cmd + " -I #{bam}"
