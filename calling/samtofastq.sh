@@ -1,7 +1,7 @@
 #!/bin/bash
 #$ -cwd
 
-heap=2000 # 2G
+heap=4 # 4G
 prefix=""
 
 USAGE="$0 -b foo.bam -p prefix_of_fastq -g global_config"
@@ -53,11 +53,11 @@ fi
 
 # echo $prefix
 
-JAVA="java -Xmx${heap}m -Djava.io.tmpdir="${TEMP}
+JAVA="java -Xmx${heap}g -Djava.io.tmpdir="${TEMP}
 SamToFastq="$JAVA -jar ${PICARD}/SamToFastq.jar" 
 
 
-$SamToFastq INPUT=$bam FASTQ=$prefix"_1_sequence.fastq" SECOND_END_FASTQ=$prefix"_2_sequence.fastq"
+$SamToFastq INPUT=$bam FASTQ=$prefix"_1.fastq" SECOND_END_FASTQ=$prefix"_2.fastq"
 
 echo "samtofastq complete"
 rm -rf $TEMP

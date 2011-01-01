@@ -10,20 +10,23 @@ HEAP=4000
 INP=""
 CHR=""
 MEM=""
+chain=""
 
 USAGE="Usage: $0 -I <Input bam file> -L <Chromosome> -g <global config> [-m heap_memory]"
 ERRORMESSAGE="#### ERROR"
 ERRORMESSAGE1="The following error has occurred"
 
-while getopts I:L:m:g:h o
-do      case "$o" in
-        I)      INP="$OPTARG";;
-        L)      CHR="$OPTARG";;
-        m)      MEM="$OPTARG";;
-        g)      GLOBAL="$OPTARG";;  # global config
-        h)      echo $USAGE
-                exit 1;;
-        esac
+while getopts I:L:m:g:c:h o
+  do 
+  case "$o" in
+      I) INP="$OPTARG";;
+      L) CHR="$OPTARG";;
+      m) MEM="$OPTARG";;
+      c) chain="$OPTARG";;  # if $chain != 0,  chain reaction.
+      g) GLOBAL="$OPTARG";;  # global config
+      h) echo $USAGE
+	  exit 1;;
+  esac
 done
 
 
@@ -40,10 +43,20 @@ if [ ! $MEM == "" ]
     HEAP=$MEM
 fi
 
+
 OUTDIR=$INP"_pipe"
 if [ ! -d $OUTDIR ]; then
     mkdir $OUTDIR
 fi
+
+if [ ! $chain == "" ]; then
+    status=$chain
+else
+    status=$OUTDIR"/realign.status"
+fi
+
+touch $status
+
 
 if [ $JOB_ID == "" ]; then
     JOB_ID=$CHR
@@ -73,7 +86,7 @@ if [[ $CHR == "24"  ]]
     then
     CHR="Y"
 fi
-if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc                                                                                                                       
+if [[ $REFTYPE == "hg" ]]  # hg18/19 -> chr1, chr2 etc;  build36/37 -> 1, 2 etc
     then
     CHR="chr${CHR}"
 fi
@@ -114,9 +127,48 @@ if [[ $? == 0 ]]
     then
     rm -f $OUTDIR/$CHR.cleaned.bam
     echo "fixmate complete"
+    echo $CHR >> $status
 else
     echo "fixmate failed"
     exit 1
 fi
 # rm -rf $OUTDIR/$CHR.realign.*
+
+
+
+### "chain reaction": check the status of other chromosomes. If all chromosomes are complete, then proceed to the next step (merge and recalibrate etc). 
+if [[ $chain != "" ]]; then
+# wait for 6 seconds if not complete
+    for (( i=0; i<2; i++ ))
+      do 
+      completed=`wc -l $status | awk '{print $1}'`
+      if [[ $completed == "24" ]]; then  # all chromosomes completed, proceed to the next step (merge), 
+	  echo "all completed" >>  $status  # make it stop
+	  
+	  if [ ! -e $OUTDIR"/forRealigner.intervals.bz2" ]
+	      then
+	      cat $OUTDIR/*.forRealigner.intervals | bzip2 - > $OUTDIR/forRealigner.intervals.bz2
+	      rm -f $OUTDIR/*.forRealigner.intervals
+	  fi
+	  
+##  merge bam files
+	  if [ ! -e $OUTDIR"/all.realigned.bam"  ] # need merge
+	      then
+	      echo "merge bam files"
+	      ${SAMTOOLS} merge $OUTDIR/all.realigned.bam $OUTDIR/*.fixed.bam  > $OUTDIR/log.merge 2>&1
+	      
+	      rm -f $OUTDIR/*.fixed.bam
+	      ${SAMTOOLS} index $OUTDIR/all.realigned.bam  > $OUTDIR/log.index 2>&1
+	      rm -rf $INP  # delete original bam
+	  fi
+	  
+	  i=2
+	  
+      else
+	  sleep 3
+      fi
+    done
+fi
+
+
 rm -fr $TEMP

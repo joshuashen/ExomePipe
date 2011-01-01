@@ -3,7 +3,7 @@
 
 # default values
 ref="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/human_g1k_v37.fasta"
-maxgaps=2
+maxgaps=1
 qualtrim=5
 platform="illumina"
 threads=2
@@ -66,10 +66,11 @@ if [[ ! $fastq2 == "" ]]; then  # paired-ends
     echo $cmd
     $bwa aln -q $qualtrim -o $maxgaps -t  $threads  $ref  $fastq2 > $fastq2.sai
     
-    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq2.sai $fastq1 $fastq2 | $samtools view -bS - | $samtools sort  -  $output
+# view -bS -o #{output} -
+
+    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq2.sai $fastq1 $fastq2 | $samtools view -bS - | $samtools sort   -  $output
     # echo $cmd
-    # $cmd
-    
+   
 else
     
     $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq1 | $samtools view -bS - | $samtools sort   -  $output
@@ -80,7 +81,9 @@ $samtools view -H $output.bam | sed 's/SO\:unsorted/SO:coordinate/' > $output.ba
 
 # add mapping tool to header
 
-echo "@PG\tID:$readgroup\tVN:$bwaversion\tCL:$bwa" >> $output.bam.header
+echo -e "@PG\tID:$readgroup\tVN:$bwaversion\tCL:$bwa" >> $output.bam.header
+# alternative for older version of echo:
+# echo  "@PG"$'\t'"ID:$readgroup"$'\t'"VN:$bwaversion"$'\t'"CL:$bwa" >> $output.bam.header
 
 $samtools reheader $output.bam.header $output.bam > $output.bam.temp 
 mv $output.bam.temp $output.bam
