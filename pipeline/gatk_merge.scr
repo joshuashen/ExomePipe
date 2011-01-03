@@ -2,6 +2,10 @@
 #$ -cwd
 # -l mem=2G,time=4::
 
+# This is an intermediate step in the pipeline which is called if realignment of the bam file in the pipeline was
+# performed after splitting the file based on the chromosomes. The realigned bam files need to be merged before
+# performing calibration in the next step.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
@@ -34,6 +38,8 @@ fi
 
 DATAPATH=`dirname "$INP"`
 
+# First merge the individual bam files.
+# Next index the bam file. Sorting is not needed.
 $SAMTOOLS merge -r $INP $CONTIG_INP
 $SAMTOOLS index $INP
 rm -f $CONTIG_INP $CONTIG_INP_BAI

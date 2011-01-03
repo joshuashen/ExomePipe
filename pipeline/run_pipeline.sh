@@ -1,6 +1,13 @@
 #!/bin/sh
 #$ -cwd
 
+
+# The main script that invokes all steps part of the pipeline. The order of the steps is fixed. If any intermediate steps fails, the next step will not be executed.
+# This is true for all but the step to compute the depth of coverage. The depth of coverage computation is kicked off in parallel to the other steps in the pipeline
+# since no other step is dependent on it.
+# An automatic resubmission of jobs logic has been built. It may not be fail proof, but it works most of the time thus saving much manual intervention.
+# The date command is invoked before and after each step so as to find out the time taken for executing that step.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
@@ -32,6 +39,10 @@ then
 	exit 1
 fi
 
+
+# The CONTIG_* variables give information on the contig order of the chromosomes for the given bam file under consideration.
+# Based on this order, they contain a generated string which is used to perform a specific action.
+# This is useful in the post realignment bam file merge step.
 SUFFIX=".fixed.bam"
 SUFFIX_BAI=".fixed.bam.bai"
 DATAPATH=`dirname "$INP"`
@@ -40,12 +51,19 @@ CONTIG_INP_ORDER="`$SAMTOOLS idxstats $INP | grep -m 24 [0-9] | awk -v var1="$IN
 CONTIG_INP_BAI_ORDER="`$SAMTOOLS idxstats $INP | grep -m 24 [0-9] | awk -v var1="$INP" -v var2="$SUFFIX_BAI" '{print var1 $1 var2}' | tr '\n' ' '`"
 RESULT=0
 
+
+# Either or both of the chromosome # or the file containing exon region details needs to be provided.
+# Normally, one of the two is to be provided and not both.
 if [[ $CHR == "" && $ExonFile == "" ]]
 then
 	echo $EXONUSAGE
 	exit 1
 fi
 
+
+# This steps performs realignment of the bam file. It is the most time consuming step and so it is split into smaller jobs.
+# The while loop aids in automatic re-running of failed jobs. A failed job is determined based on the status returned by the qstat command as described below.
+# The realignment_count variable keeps track of the number of attempts. The logs from each attempt are saved based on this number.
 realignment_count=0
 while [[ $RESULT == 0 ]]
 do
@@ -54,6 +72,9 @@ do
 	rm -f $DATAPATH/realignment*.output
 	echo Calling ./gatk_realign.scr step by step... Attempt "$realignment_count"
 	RESULT=1
+
+	# If chromosome # is not specified it is assumed that realignment needs to be run for the entire chromosome. This step is then split up to run for the
+	# X, Y and chromosomes 1-22. If chromosome # was specified, realignment is run for that chromosome alone in the else condition.
 	if [[ $CHR == "" ]]
 	then
 		RETX=`qsub -l mem=5G,time=2:: -e $DATAPATH/realignment.output -o $DATAPATH/realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L "X"`
@@ -65,6 +86,11 @@ do
 		RET=`qsub -l mem=8G,time=16:: -o $DATAPATH/realignment.output -e $DATAPATH/realignment.output ./gatk_realign.scr -I $INP -R $REF -D $DBSNP -L $CHR | awk '{print $3}'`
 	fi
 
+	# The status of the job is checked periodically until the job has ended. When the job has ended, STATUS will be non-empty since grep will return a value.
+	# There are two ways we check for an error:
+	#   1. An error has occured in the environment and $? is non-zero.
+	#   2. An error message is printed in either of the realignment or the run_pipeline log file.
+	# If either of the two is found, all remaining split-jobs are killed, their logs saved and we loop again.
 	STATUS=`qstat -j "$RET" 2>&1 | grep "$JOB_STAT"`
 	while [[ -z $STATUS ]]
 	do
@@ -89,7 +115,9 @@ RESULT=0
 echo
 
 
-
+# Post realignment, the individual realigned bam files are merged. This is done only if a chromosome # was not specified or else there were no split-jobs.
+# It is necessary to merge the bam files before the next step of calibration since calibration gives more accurate results when performed on the entire genome.
+# The looping logic is similar to the realignment step above.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -118,7 +146,7 @@ RESULT=0
 echo
 
 
-
+# This step performs calibration of the merged bam file from the previous step.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -144,7 +172,7 @@ RESULT=0
 echo
 
 
-
+# This step performs recalibration of the bam file from the previous step.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -170,13 +198,18 @@ RESULT=0
 echo
 
 
-
+# This step computes the depth of coverage obtained. It is important to note that this step is performed on the recalibrated file and not on the original bam file.
+# Also while there is an auto resubmit logic built for this step as well, failure of this step does not block the remaining pipeline from running. In fact all we
+# wait for is the step to begin running before we proceed to the next step.
 while [[ $RESULT == 0 ]]
 do
 	date
 	rm -f $DATAPATH/depthofcoverage.output
 	echo "Calling ./gatk_depthofcoverage.scr ..."
 	RESULT=1
+
+	# If both chromosome # and the Exon list are specified, priority is given to the Exon list. Hence depth of coverage will be computed for the entire set of
+	# exon regions. Normally we would expect one of the two parameters alone to be specified.
 	if [[ $ExonFile == "" ]]
 	then
 		qsub -l mem=6G,time=8:: -o $DATAPATH/depthofcoverage.output -e $DATAPATH/depthofcoverage.output ./gatk_depthofcoverage.scr -I $INP.fixed.bam.recalibrated.bam -R $REF -L $CHR
@@ -184,10 +217,15 @@ do
 		qsub -l mem=6G,time=8:: -o $DATAPATH/depthofcoverage.output -e $DATAPATH/depthofcoverage.output ./gatk_depthofcoverage.scr -I $INP.fixed.bam.recalibrated.bam -R $REF -E $ExonFile
 	fi
 
+	# We wait until the qsub command has actually kicked in. When this happens, the output log file will be created.
 	while [[ ! -s $DATAPATH/depthofcoverage.output ]]
 	do
 		sleep 10
 	done
+
+	# For this step we check for failure only towards the beginning of execution. It is quite complicated to check for failure in a loop until completion.
+	# Hence there may be a little more manual intervention involved in this step. However, a good number of times if the step was not invoked correctly etc.,
+	# the step fails in the very beginning and is caught. While this is reported in the log file, we still permit execution for the rest of the script.
 	if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/depthofcoverage.output "$DATAPATH"/pipeline.output` != "" ]]
 	then
 	        echo "Depth of coverage FAILED"
@@ -200,7 +238,7 @@ RESULT=0
 echo
 
 
-
+# This step performs indel calling on the recalibrated bam file.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -226,7 +264,7 @@ RESULT=0
 echo
 
 
-
+# This step performs SNP calling on the recalibrated bam file.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -252,7 +290,7 @@ RESULT=0
 echo
 
 
-
+# This step performs variant evaluation on the recalibrated bam file.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -278,7 +316,7 @@ RESULT=0
 echo
 
 
-
+# This step performs variant filtering on the recalibrated bam file.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -304,7 +342,7 @@ RESULT=0
 echo
 
 
-
+# This step performs variant evaluation on the recalibrated bam file.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -331,7 +369,7 @@ echo
 date
 
 
-
+# This step computes the transition/transversion ratio.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -358,7 +396,7 @@ echo
 date
 
 
-
+# This step performs am SNV count for the filtered vcfs.
 while [[ $RESULT == 0 ]]
 do
 	date
@@ -384,5 +422,6 @@ RESULT=0
 echo
 date
 
+# Provide read/write access to all generated files.
 chmod g=rw $DATAPATH/*
 

@@ -2,6 +2,8 @@
 #$ -cwd
 # -l mem=5G,time=1::
 
+# This step in the pipeline performs the variant filtration of data.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]

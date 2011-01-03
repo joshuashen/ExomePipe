@@ -2,6 +2,8 @@
 #$ -cwd
 # -l mem=6G,time=8::
 
+# This step in the pipeline computes the depth of coverage.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
@@ -31,13 +33,19 @@ then
         exit 1
 fi
 
+# Specify either the chromosome range or the exon region list. If neither or both are specified,
+# we do not know what to do.
 if [[ $List == "" && $ExonFile == "" || $List != "" && $ExonFile != "" ]]
 then
 	echo $EXONUSAGE
 	exit 1
 fi
 
+# Obtain the chromosome naming convention.
 CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
+
+# If exon region list is specified, modify the file format to the following form: "<chr#>:low-high"
+# If chromosome range is specified, just check for the naming convention.
 if [[ $ExonFile != "" ]]
 then
         if [[ -n $CHR_NAME ]]

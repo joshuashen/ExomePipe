@@ -2,6 +2,8 @@
 #$ -cwd
 #$ -l mem=5G,time=16::
 
+# This step performs a smart merge of the variant outputs from the pipeline for samples from the same dataset.
+
 GLOBAL="global_config.sh"
 TEMP="temp_file"
 DELIMITER='_'

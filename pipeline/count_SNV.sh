@@ -1,6 +1,9 @@
 #!/bin/sh
 #$ -cwd
 
+# Performs SNV count for individual chromosome. Invoked by the count_all_SNV.sh script.
+
+# Keywords used in identifying lines in the VCF file that contain actual data.
 CHECK1="HaplotypeScore"
 CHECK2="HRun"
 
@@ -21,6 +24,10 @@ then
         echo $USAGE
         exit 1
 fi
+
+# The hap.list.$CHR file is populated with the variant locations. The exon.list is populated with the exon regions
+# for the particular chromosome. The variant file is compared against exon regions to find the SNVs in the
+# exon regions alone.
 
 DATAPATH=`dirname "$VCF_FILE"`
 grep $CHECK1 $VCF_FILE | grep $CHECK2 | awk -v var1=$CHR '$1 == var1 {print $1 " " $2}' > $DATAPATH/hap.list.$CHR
@@ -44,6 +51,14 @@ rm -f $DATAPATH/SNV.list.$CHR
 SNV=-1
 LOW=0
 HIGH=0
+
+# The following logic implements a simple linear complexity algorithm.
+# We have with us a set of exon regions and variant locations.
+#
+#   Identify the location of the first SNV and also the first exon region.
+#   If the SNV location is lesser than the lower limit of the present exon region, locate the next SNV.
+#   If the SNV location is greater than the higher limit of the present exon region, locate the next exon region.
+#   If the SNV location is within the limits of the present exon region, increment the count.
 
 while [[ $eof1 -eq 0 && $eof2 -eq 0 ]]
 do

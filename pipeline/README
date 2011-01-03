@@ -1,0 +1,30 @@
+The scripts in this folder form a computational pipeline for analyzing WGS and
+Exome data. For a quick explanation on how to run the pipeline, scroll down to the section named RUNNING THE PIPELINE towards the end.
+
+The steps that are part of the pipeline are:
+
+1. Realignment of bam files
+2. Calibration
+3. Recalibration
+4. Depth of coverage calculation
+5. Indel Calling
+6. SNP Calling
+7. Variant evaluation
+8. Variant Filtering
+9. Transition/Transversion ratio computation
+10. Obtain SNV count
+
+The various steps part of the main pipeline are invoked in run_pipeline.sh. This script receives as input various values such as the reference fasta and the input bam file, apart from the others. All the steps are invoked using the qsub command. There is another script called job.sh that invokes run_pipeline.sh itself. job.sh may be used independently or may serve as the template for running the pipeline on various sets of data. TCGA_job.sh and YALE_job.sh are modified versions of the script that have some preset parameters.
+
+There is a global configuration file called global_config.sh that is used to set various environmental parameters before running the pipeline. This file is loaded towards the beginning in each of the other .sh/.scr files.
+
+The final output from the pipeline is VCF data. One may want to combine VCF data from various samples part of the same dataset. The script gatk_smart_merge.scr accomplishes this. It may be run on the VCF files produced from all samples from the same dataset.
+
+The scripts are written to be modular. One may run individual scripts or the entore pipeline. Each script performs necessary parameter checking.
+
+RUNNING THE PIPELINE
+
+Modify any necessary parameters in the global_config.sh file. These may be any JAVA related settings, path to the various binaries, reference fasta or dbsnp files or most importantly the BPATH variable.
+
+Now run job.sh by supplying it with all necessary parameters. If you're planning to run the pipeline over and over again, it is better to modify job.sh as a new file by specifying parameters such as the reference fasta, dbsnp, platform and the exon list.
+

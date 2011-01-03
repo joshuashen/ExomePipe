@@ -3,6 +3,7 @@
 
 GLOBAL="global_config.sh"
 
+# Load the global config file.
 if [[ -e $GLOBAL ]]
 then
 	. $GLOBAL
@@ -11,6 +12,7 @@ else
         exit 1
 fi
 
+# Only the input bam file needs to be specified.
 while getopts I:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
@@ -28,5 +30,6 @@ fi
 DATAPATH=`dirname "$INP"`
 rm -f $DATAPATH/*.output
 
+# The pipeline is invoked here.
 $BPATH/run_pipeline.sh -I $INP -R $TCGA_REF -E $TCGA_List -D $TCGA_DBSNP -P $TCGA_Platform > $DATAPATH/pipeline.output
 

@@ -2,6 +2,8 @@
 #$ -cwd
 # -l mem=5G,time=4::
 
+# This step in the pipeline computes the transition to transversion ratio of the variants.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
@@ -41,6 +43,8 @@ $GATK \
   -priority raw,filtered \
   -o $INP.merged.vcf
 
+
+# If the CombineVariants step fails, we do not let the next step to execute.
 if [[ $? != 0 || `grep "$ERRORMESSAGE" "$DATAPATH"/compute_ratio.output "$DATAPATH"/pipeline.output` != "" ]]
 then
 	echo "CombineVariants FAILED"
