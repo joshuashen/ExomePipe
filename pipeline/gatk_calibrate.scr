@@ -2,6 +2,8 @@
 #$ -cwd
 # -l mem=8G,time=8::
 
+# This step in the pipeline performs calibration of the original input bam file.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
@@ -30,6 +32,10 @@ then
         echo $USAGE
         exit 1
 fi
+
+# Chromosome number may be specified in eithe of the formats for example:
+# chrX or X
+# Find out using the samtools idxstats command.
 
 CHR_NAME=`$SAMTOOLS idxstats $INP | grep chr`
 

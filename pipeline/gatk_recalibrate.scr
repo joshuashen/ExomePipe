@@ -2,6 +2,8 @@
 #$ -cwd
 # -l mem=8G,time=8::
 
+# This step in the pipeline performs recalibration of the bam file.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]

@@ -2,6 +2,8 @@
 #$ -cwd
 # -l mem=8G,time=16::
 
+# This is the first step in the pipeline. It performs realignment of the bam file given as input.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
@@ -25,10 +27,9 @@ do      case "$o" in
         esac
 done
 
-#NOTE!!!
-#Enforcing the need for providing chromosome list as input due to amount of
-#time taken to run the step. Realignment will not be permitted without that input.
-#To remove the restriction, change this line below.
+# Enforcing the need for providing chromosome list as input due to amount of
+# time taken to run the step. Realignment will not be permitted without that input.
+# To remove the restriction, change this line below.
 
 if [[ $INP == ""  || $REF == "" || $DBSNP == "" || $CHR == "" && $SGE_TASK_ID == "" ]]
 then

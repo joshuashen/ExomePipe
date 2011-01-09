@@ -1,5 +1,5 @@
-#!/bin/sh
-#$ -cwd
+# This is a template file. Modify this file to create a new file by specifying the parameters:
+# REF, ExonList, DBSNP and Platform.
 
 GLOBAL="global_config.sh"
 
@@ -28,5 +28,6 @@ fi
 DATAPATH=`dirname "$INP"`
 rm -f $DATAPATH/*.output
 
+# Modify the following line.
 $BPATH/run_pipeline.sh -I $INP -R $REF -E $ExonList -D $DBSNP -P $Platform > $DATAPATH/pipeline.output
 

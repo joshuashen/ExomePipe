@@ -2,6 +2,8 @@
 #$ -cwd
 #$ -l mem=6G,time=8::
 
+# This step in the pipeline performs indel calling on the input bam file.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]

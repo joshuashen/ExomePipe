@@ -2,6 +2,9 @@
 #$ -cwd
 # -l mem=5G,time=1::
 
+# This step in the pipeline performs variant evaluation on the VCFs.
+# This step has to be invoked before and after the variant filtration step.
+
 GLOBAL="global_config.sh"
 
 if [[ -e $GLOBAL ]]
