@@ -5,7 +5,7 @@
 # Realign reads locally around indels
 # Run with all samples from a single chromosome together in $INP.list
 
-HEAP=4000
+HEAP=4
 ### TEMP="/ifs/scratch/c2b2/af_lab/saec/temp/"
 INP=""
 CHR=""
@@ -69,7 +69,7 @@ if [ ! -d $TEMP ]; then
     mkdir -p $TEMP
 fi
 
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+JAVA="java -Xmx${HEAP}g -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 FIXMATE="$JAVA -jar ${PICARD}/FixMateInformation.jar" 
 

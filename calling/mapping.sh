@@ -12,17 +12,19 @@ bwa=`which bwa`
 samtools=`which samtools`
 output=""
 bwaversion=`$bwa 2>&1 | grep Version | awk '{print $2""$3}'`
+sortmem=1000000000  # mem allocated for samtools sort  
 
-
+### Note: bwa sample uses about 3.5G RAM,  if this job is submitted with 8G max RAM, the max $sortmem should be about 3G. 
 
 USAGE="Usage: $0 -r ref -i foo_1.fastq [ -p foo_2.fastq ] [ -g maxgaps] [ -q qualtrim ] [ -n sampleName] [ -f platform] [ -s global_setting ]"
 
-while getopts r:i:p:g:q:n:s:f:o:h opt
+while getopts r:i:p:g:q:n:s:f:m:o:h opt
   do      
   case "$opt" in
       r) ref="$OPTARG";;
       i) fastq1="$OPTARG";;
       p) fastq2="$OPTARG";;
+      m) sortmem="$OPTARG";;
       g) maxgaps="$OPTARG";;
       q) qualtrim="$OPTARG";;
       n) sampleName="$OPTARG";;
@@ -68,12 +70,14 @@ if [[ ! $fastq2 == "" ]]; then  # paired-ends
     
 # view -bS -o #{output} -
 
-    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq2.sai $fastq1 $fastq2 | $samtools view -bS - | $samtools sort   -  $output
+    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq2.sai $fastq1 $fastq2 | $samtools view -bS - | $samtools sort -m $sortmem  -  $output
     # echo $cmd
+    rm -f $fastq1.sai $fastq2.sai
    
 else
     
-    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq1 | $samtools view -bS - | $samtools sort   -  $output
+    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq1 | $samtools view -bS - | $samtools sort -m $sortmem  -  $output
+    rm -f $fastq1.sai
 fi
 
 # fix a bug in samtools sort

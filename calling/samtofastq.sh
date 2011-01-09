@@ -56,8 +56,8 @@ fi
 JAVA="java -Xmx${heap}g -Djava.io.tmpdir="${TEMP}
 SamToFastq="$JAVA -jar ${PICARD}/SamToFastq.jar" 
 
-
-$SamToFastq INPUT=$bam FASTQ=$prefix"_1.fastq" SECOND_END_FASTQ=$prefix"_2.fastq"
+# VALIDATION_STRINGENCY=SILENT is required to allow bwa output regarding unmapped reads.
+$SamToFastq INPUT=$bam FASTQ=$prefix"_1.fastq" SECOND_END_FASTQ=$prefix"_2.fastq" VALIDATION_STRINGENCY=SILENT
 
 echo "samtofastq complete"
 rm -rf $TEMP
