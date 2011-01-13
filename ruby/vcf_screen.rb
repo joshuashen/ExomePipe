@@ -19,7 +19,8 @@ end
 # $stderr.puts '@@ intervals loaded'
 
 File.new(vcf, "r").each do |line|
-  if line=~/^(\d+)\s+(\d+)/
+  next if line.match("^#")
+  if line=~/^(\S+)\s+(\d+)/
     chr,p=$1, $2.to_i
     
 
