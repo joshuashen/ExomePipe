@@ -65,9 +65,9 @@ $GATK \
  -nt 4 \
  -I $INP \
  -o $INP.snps.raw.vcf \
- -stand_call_conf 10.0 \
+ -stand_call_conf 50.0 \
  -stand_emit_conf 10.0 \
- -dcov 50 
+ -dcov 300 
 
 #-bm EMPIRICAL \
 #-pl $Platform
