@@ -57,7 +57,7 @@ fi
 # fi
 
 bamlist=`readlink -e $bamlist`
-temp=$bamlist"_SNVcall_dir"
+temp=$bamlist"_indelcall_dir"
 
 mkdir -p $temp
 
@@ -79,7 +79,7 @@ for (( j=1; j<=$njobs; j++ ))  #
 
   mkdir -p $tempd
   
-  out=${temp}"/snv.slice."$j".sh"
+  out=${temp}"/indel.slice."$j".sh"
 #  chromosome=${chrprefix}${i}
   chrtarget=$out".targets.list" 
 
@@ -90,12 +90,26 @@ for (( j=1; j<=$njobs; j++ ))  #
   
   echo '#!/bin/bash'  > $out
   echo '#$ -cwd' >> $out
-  
-  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
+
+#  java -jar /path/to/GenomeAnalysisTK.jar \
+#     -T IndelGenotyperV2 \
+#     -l INFO \
+#     -R reference.fasta \
+#     -I sequencing.data.bam \
+#     -bed my.brief.output.bed        \
+#     -verbose my.detailed.output.txt \
+#     -o my.output.vcf \
+#     --refseq /path/to/refseq.rod \
+#     -L chr1
+
+
+cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T IndelGenotyperV2 -R $REF -I $bamlist -bed $temp/indel.slice.$j.brief.bed -verbose $temp/indel.slice.$j.verbose.txt -o $temp/indel.slice.$j.vcf --refseq $REFSEQ -L $chrtarget"
+
+#  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
   
   echo $cmd >> $out
   
   
-  qsub -l mem=${qmem}G,time=60:: -o $temp/log.$j.o -e $temp/log.$j.e -N snp.$j.$bname $out 
+  qsub -l mem=${qmem}G,time=60:: -o $temp/log.$j.o -e $temp/log.$j.e -N indel.$j.$bname $out 
   # echo $qmem
 done
