@@ -6,17 +6,18 @@ dcov=300 # down sampling to dcov if depth is larger than dcov
 mbq=20 # min base qual 
 mmq=20 # min mapping qual
 njobs=900
+maxReads=500000
 
-USAGE="Usage: $0 -i <list of bam files> -m <heap> -s <global setting> [ -n number_of_threads] [ -j number_of_qjobs] [-d down_sampling] [ -b min_base_qual] [ -q min_mapping_qual] [ -v total_mem ]"
+USAGE="Usage: $0 -i <list of bam files> -m <heap> -s <global setting> [ -n number_of_threads] [ -j number_of_qjobs] [-r maxNumberOfReads] [ -b min_base_qual] [ -q min_mapping_qual] [ -v total_mem ]"
 
-while getopts i:m:o:s:d:n:j:b:q:v:h opt
+while getopts i:m:o:s:r:n:j:b:q:v:h opt
   do 
   case "$opt" in
       i) bamlist="$OPTARG";;
       m) MEM="$OPTARG";;
       s) setting="$OPTARG";;  # global config
       n) nthreads="$OPTARG";;
-      d) dcov="$OPTARG";;
+      r) maxReads="$OPTARG";;
       j) njobs="$OPTARG";;
       b) mbq="$OPTARG";;
       q) mmq="$OPTARG";;
@@ -103,7 +104,7 @@ for (( j=1; j<=$njobs; j++ ))  #
 #     -L chr1
 
 
-cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T IndelGenotyperV2 -R $REF -I $bamlist -bed $temp/indel.slice.$j.brief.bed -verbose $temp/indel.slice.$j.verbose.txt -o $temp/indel.slice.$j.vcf --refseq $REFSEQ -L $chrtarget"
+cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T IndelGenotyperV2 -R $REF -I $bamlist -bed $temp/indel.slice.$j.brief.bed -verbose $temp/indel.slice.$j.verbose.txt -o $temp/indel.slice.$j.vcf --refseq $REFSEQ -L $chrtarget --maxNumberOfReads ${maxReads}"
 
 #  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
   

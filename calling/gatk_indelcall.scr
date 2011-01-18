@@ -6,7 +6,7 @@
 
 # Load all samples from chromosome in a single $INP bam file
 
-HEAP=4000
+HEAP=4
 
 INP=""
 CHR=""
@@ -16,11 +16,10 @@ MEM=""
 
 USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> [-L \"#:#-#\"]"
 
-while getopts I:L:t:g:m:h o
+while getopts I:L:g:m:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
         L)      CHR="$OPTARG";;
-        t)      TEMP="$OPTARG";;
         m)      MEM="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
         h)      echo $USAGE
@@ -47,7 +46,7 @@ if [ $JOB_ID == "" ]; then
 fi
 
 # JOB_ID is the qsub job ID
-TEMP=$TEMP"/"$JOB_ID"/"
+TEMP=$INP"/"$JOB_ID"/"
 
 if [ ! -d $TEMP ]; 
     then    
@@ -55,7 +54,7 @@ if [ ! -d $TEMP ];
 fi
 
 
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+JAVA="java -Xmx${HEAP}g -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
 $GATK \
@@ -65,6 +64,7 @@ $GATK \
     -bed $INP.indels.brief.bed \
     -verbose $INP.indels.verbose.bed \
     -o $INP.indels.vcf \
+    --refseq $REFSEQ \
     --window_size 300 
 
 if [[ $? == 0 ]]

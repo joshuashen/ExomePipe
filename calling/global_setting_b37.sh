@@ -11,4 +11,4 @@ export BWA="/ifs/home/c2b2/ip_lab/yshen/usr/bin/bwa"  # bwa 0.5.8
 export BPATH="/ifs/home/c2b2/af_lab/saec/code/ExomePipe/calling/"
 export STING="/ifs/data/c2b2/af_lab/saec/Software/"
 export AnnotationTable="/ifs/data/c2b2/af_lab/saec/Sequencing/resources/references/annotation/refGene-big-table-b37.txt"
-export REFSEQ="/ifs/data/c2b2/af_lab/saec/Sequencing/resources/references/refseq_b37_hg19.rod"
+export REFSEQ="/ifs/data/c2b2/af_lab/saec/Sequencing/resources/references/refseq_b37_hg19.mod.order.rod"
