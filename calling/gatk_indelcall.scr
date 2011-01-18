@@ -14,7 +14,7 @@ TEMP=""
 GLOBAL=""
 MEM=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta> [-L \"#:#-#\"]"
+USAGE="Usage: $0 -I <Input bam file> -R <Reference Fasta>"
 
 while getopts I:L:g:m:h o
 do      case "$o" in
@@ -27,7 +27,7 @@ do      case "$o" in
         esac
 done
 
-if [[ $INP == "" || $GLOBAL == "" || $TEMP == "" ]]
+if [[ $INP == "" || $GLOBAL == "" ]]
 then
         echo $USAGE
         exit 1
