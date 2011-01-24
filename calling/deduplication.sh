@@ -38,7 +38,9 @@ $MarkDup I=$bam O=$bam.temp METRICS_FILE=$bam.dup VALIDATION_STRINGENCY=SILENT
 if [[ $? == 0 ]]
     then
     mv $bam.temp $bam
+    rm $bam.bai
     $SAMTOOLS index $bam
+    
     echo "dedup complete"
     rm -rf $temp
 else

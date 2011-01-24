@@ -41,12 +41,7 @@ if [ ! $MEM == "" ]
 fi
 
 
-if [ $JOB_ID == "" ]; then
-    JOB_ID="Indelcalling"
-fi
-
-# JOB_ID is the qsub job ID
-TEMP=$INP"/"$JOB_ID"/"
+TEMP=$INP"_temp-4-indel"
 
 if [ ! -d $TEMP ]; 
     then    
@@ -57,15 +52,14 @@ fi
 JAVA="java -Xmx${HEAP}g -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
-$GATK \
-    -T IndelGenotyperV2 \
-    -R $REF \
-    -I $INP \
-    -bed $INP.indels.brief.bed \
-    -verbose $INP.indels.verbose.bed \
-    -o $INP.indels.vcf \
-    --refseq $REFSEQ \
-    --window_size 300 
+
+cmd="$GATK -T IndelGenotyperV2 -R $REF -I $INP  -bed $INP.indels.brief.bed  -verbose $INP.indels.verbose.bed     -o $INP.indels.vcf  --refseq $REFSEQ  --maxNumberOfReads 50000 --window_size 300"
+    
+if [[ $CHR != "" ]]; then
+    cmd=$cmd" -L $CHR"
+fi
+
+$cmd
 
 if [[ $? == 0 ]]
     then

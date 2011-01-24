@@ -3,19 +3,18 @@
 
 heap=4
 
-while getopts v:g:t:m:h opt
+while getopts v:g:m:h opt
   do  
   case "$opt" in
       v) vcf="$OPTARG";;
       g) GLOBAL="$OPTARG";;
-      t) TEMP="$OPTARG";;
       m) MEM="$OPTARG";;
       h) echo $USAGE
 	  exit 1;;
   esac
 done
 
-if [[ $vcf == "" || $GLOBAL == "" || $TEMP == "" ]]
+if [[ $vcf == "" || $GLOBAL == "" ]]
 then
         echo $USAGE
         exit 1
@@ -33,6 +32,9 @@ targets=$vcf".targets.list"
 
 awk '{print $1":"$2"-"$3}' $ExonFile > $targets
 
+TEMP=$vcf"_anno-temp"
+mkdir -p $TEMP
+
 JAVA="java -Xmx${heap}g -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
@@ -48,3 +50,4 @@ $GATK \
     -o $vcf.annotated \
     -BTI variant \
 
+rm -rf $TEMP
