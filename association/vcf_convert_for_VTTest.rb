@@ -129,7 +129,7 @@ def readVCF(gt,samples,  vcf, switch)
             sname = sid[i]
 #            $stderr.puts sname
 #            $stderr.puts line
-
+            next unless samples.key?(sname)
             a = encodeGT(gtc[0])
             next if a < 0 # missing value
 #            gt[geneName][pos][sname] = a

@@ -36,7 +36,7 @@ inputline=""
 for f in `cat $list`
 do
   # sampleID=`echo $f | cut -f1 -d '_'`
-  g=`echo $f | cut -f1 -d '.'`
+  g=`echo $f | sed 's/\//_/g'`
   inputline=$inputline"-B:$g,VCF $f  "
 done
 
