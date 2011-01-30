@@ -31,7 +31,7 @@ def printout(gt, prefix)
     gt[gene].keys.sort.each do |pos|
       num += 1
       snv = gt[gene][pos]
-      snpo.puts "#{gene}\t#{num}\t0.5\t#{snv[:chr]}\t#{pos}\t#{snv[:fclass]}"  # polyphen score is set to 0.5
+      snpo.puts "#{gene}\t#{num}\t0.5\t#{snv[:chr]}\t#{pos}\t#{snv[:fclass]}\t#{snv[:id]}"  # polyphen score is set to 0.5
       majorAllele = 0
       alleles = {0=> 0, 1=>0, 2=> 0, -9 => 0}
       gt[gene][pos][:controls].values.each do |a|
@@ -114,6 +114,11 @@ def readVCF(gt,samples,  vcf, switch)
           if !gt[geneName].key?(pos)
             snv = {}
             snv[:chr] = chr
+            if id.match("^rs")
+              snv[:id] = id 
+            else
+              snv[:id] = "#{chr}_#{pos}"
+            end
             #snv[:pos] = pos
             snv[:fclass] = fclass
             snv[:controls] = {}
