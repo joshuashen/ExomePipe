@@ -140,7 +140,7 @@ def getopt
   end
   if optHash.key?("--help") or !optHash.key?("--vcf") 
     $stderr.puts "Usage: ruby __.rb -v VCF [options]"
-    
+    $stderr.puts "     options: "
     exit
   end
   return optHash

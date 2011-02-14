@@ -42,7 +42,7 @@ def main
           gene[geneName][pos]["class"] = functionclass
         end
       end
-      $stderr.puts functionclass
+#      $stderr.puts functionclass
       if flag == 1 # non-syn
         0.upto(gt.size-1) do |i|
           gtc = gt[i].split(':')

@@ -84,13 +84,20 @@ for (( j=1; j<=$njobs; j++ ))  #
   chrtarget=$out".targets.list" 
 
   let total=$total+$nslice
+
+  if [[ $j -eq $njobs ]]
+      then
+      let njobs=$njobs-1
+      let nslice=$num-$nslice*$njobs
+      let njobs=$njobs+1
+  fi
  
   head -${total} $target | tail -${nslice} > $chrtarget
 
   
   echo '#!/bin/bash'  > $out
   echo '#$ -cwd' >> $out
-  
+  echo 'uname -a' >> $out
   cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
   
   echo $cmd >> $out
