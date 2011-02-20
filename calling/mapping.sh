@@ -76,7 +76,7 @@ if [[ ! $fastq2 == "" ]]; then  # paired-ends
    
 else
     
-    $bwa sampe -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq1 | $samtools view -bS - | $samtools sort -m $sortmem  -  $output
+    $bwa samse -p $platform -i $readgroup -l $readgroup -m $sampleName $ref $fastq1.sai $fastq1 | $samtools view -bS - | $samtools sort -m $sortmem  -  $output
     rm -f $fastq1.sai
 fi
 
