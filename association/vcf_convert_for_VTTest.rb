@@ -69,7 +69,7 @@ def readVCF(gt,samples,  vcf, switch)
   File.new(vcf, 'r').each do |line|
     next if line.match("^##")
     
-    cols = line.chomp.split(/\s+/) 
+    cols = line.chomp.split(/\t/) 
 
     if cols.size < 2  # a list of VCF
       flag = 1
@@ -83,7 +83,12 @@ def readVCF(gt,samples,  vcf, switch)
       readVCF(gt, samples, cols[0], switch)
     else
       if line.match("^#CHROM")  # header of VCF
-        sid=cols[9..-1]
+        cols[9..-1].each do |cc|
+          cc = cc.sub(" ","_")
+          
+          sid << cc
+#        sid=cols[9..-1]
+        end
       else
         chr,pos,id,qual,filter,info, gtdetails = cols[0], cols[1].to_i, cols[2], cols[5].to_f, cols[6], cols[7], cols[9..-1]
         fclass = 0  # 0: synonymous; >0: non-syn

@@ -10,11 +10,13 @@ def main
   sample = {}
 
   File.new(vcf, 'r').each do |line|
-    cols = line.chomp.split(/\s+/)
+    cols = line.chomp.split(/\t/)
     if line.match("^#CHROM") # header
-      sid=cols[9..-1]
-      sid.each do |i|
+      cols[9..-1].each do |i|
+    
+        i = i.sub(" ","")
         sample[i] = {}
+        sid << i
       end
 
     elsif line.match("^#")
@@ -68,12 +70,23 @@ def main
     str = ""
     sid.each do |i|
       if sample[i].key?(geneName) 
+        flag = 0
         if sample[i][geneName].size > 1 
-          n += 1
-          str += "\t#{i}:"
           sample[i][geneName].each do |pos|
             fclass = gene[geneName][pos]["class"]
-            str = str + "#{pos}/#{fclass};"
+          #   str = str + "#{pos}/#{fclass};"
+            if fclass == "nonsense" or fclass == "readthrough" # 
+              flag = 1
+             end 
+          end
+          
+          if flag == 1
+            n += 1
+            str += "\t#{i}:"
+            sample[i][geneName].each do |pos|
+              fclass = gene[geneName][pos]["class"]
+              str = str + "#{pos}/#{fclass};"
+            end
           end
         end
       end
