@@ -36,11 +36,11 @@ dplikelihood <- function(gt)
 	# initial condition
 	numVar = nrow(gt)
 	
-	p = matrix(rep(1,(numVar+1)*(numVar+2)), nrow=numVar+2, ncol=numVar+1)
+	p = matrix(rep(0,(numVar+1)*(numVar+2)), nrow=numVar+2, ncol=numVar+1)
 	lratio = rep(0,numVar)
 	# loop through variants
-    p[1,] = 0 ## p(-1,) = 0
-	p[3:(numVar+2),1] = 0
+    p[2,1] = 1 ## p(-1,) = 0
+	#p[3:(numVar+2),1] = 0
  	#p[1,1]=0
 	for (v in 1:numVar) 
 	{
@@ -67,7 +67,7 @@ dplikelihood <- function(gt)
 	}
 	print(lratio)
 	### compute the posterior probability of data under alternative hypothesis (d>0)
-	
+	lratio
 
 }
 
