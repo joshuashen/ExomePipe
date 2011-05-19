@@ -178,7 +178,7 @@ def encodeGT(vcfcode)
   elsif vcfcode == "1/1"
     return 2
   else
-    return -9
+    return 0
   end
 end
 

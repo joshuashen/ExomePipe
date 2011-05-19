@@ -1,16 +1,13 @@
 #!/usr/bin/env ruby
 require 'getoptlong'
 
+### !!! need to take care of missing values
+
 ## convert VCF to a VT Test input files
 
 def main
   optHash = getopt()
   vcf, pheno = optHash["--vcf"], optHash["--phenotype"]
-  if optHash.key?("--output")
-    outprefix = optHash["--output"]
-  else
-    outprefix = vcf
-  end
 
   switch = 1
   if optHash.key?("--inclusive") ## 
@@ -23,57 +20,65 @@ def main
 #  snp = {}
   readVCF(gt, samples,  vcf,switch)  # gt: gene -> pos -> sample -> genotype, 
   $stderr.puts "# of genes: #{gt.keys.size}"
-  printout(gt, outprefix)
+  printout(gt, vcf)
+  
+#  doublehits(gt,samples)
   
 end
+
+
 
 
 def printout(gt, prefix)
   snpo = File.new(prefix + ".csnp", "w")
   gto = File.new(prefix + ".cgeno", "w")
-  summary = File.new(prefix + ".table", "w")
   gt.keys.sort.each do |gene|
     num = 0
     gt[gene].keys.sort.each do |pos|
       num += 1
       snv = gt[gene][pos]
-      snpo.puts "#{gene}\t#{num}\t0.5\t#{snv[:chr]}\t#{pos}\t#{snv[:fclass]}\t#{snv[:id]}"  # polyphen score is set to 0.5
-
+      # snpo.puts "#{gene}\t#{num}\t0.5\t#{snv[:chr]}\t#{pos}\t#{snv[:fclass]}\t#{snv[:id]}"  # polyphen score is set to 0.5
       majorAllele = 0
       alleles = {0=> 0, 1=>0, 2=> 0, -9 => 0}
       gt[gene][pos][:controls].values.each do |a|
-        alleles[a] += 1
+        if a >= 0
+          alleles[a] += 1
+        end
       end
       
       if alleles[2] > alleles[0]
         majorAllele = 2
       end
       
-      c1, c0 = 0,0
-      n1 = snv[:cases].keys.size
-      n0 = snv[:controls].keys.size
+      f0=0
+      f1=0
+      g1 = [0,0,0,0]
+      g0 = [0,0,0,0]
       snv[:cases].keys.sort.each do |sample|
         if  snv[:cases][sample] !=  majorAllele # carrier of a minor allele
           allele = (snv[:cases][sample] - majorAllele).to_i.abs
           gto.puts "#{gene}\t#{sample}\t#{num}\t#{allele}"
-          c1 += 1
+          f1 += 1
+          ## if snv[:cases][sample] 
         end
       end
       snv[:controls].keys.sort.each do |sample|
         if  snv[:controls][sample] !=  majorAllele # carrier of a minor allele
           allele = (snv[:controls][sample] - majorAllele).to_i.abs
           gto.puts "#{gene}\t#{sample}\t#{num}\t#{allele}"
-          c0 += 1
+          f0 += 1
         end
 
       end
-      
-      summary.puts "#{gene}\t#{snv[:id]}\t#{c1}\t#{c0}\t#{n1}\t#{n0}"
+
+      if f0 >0 or f1 > 0 
+        snpo.puts "#{gene}\t#{num}\t0.5\t#{snv[:chr]}\t#{pos}\t#{snv[:fclass]}\t#{snv[:id]}\t#{f1}\t#{f0}"  
+      end
+
     end
   end
   snpo.close
   gto.close
-  summary.close
 end
 
 def readVCF(gt,samples,  vcf, switch)
@@ -83,7 +88,7 @@ def readVCF(gt,samples,  vcf, switch)
   File.new(vcf, 'r').each do |line|
     next if line.match("^##")
     
-    cols = line.chomp.split(/\t/) 
+    cols = line.chomp.split(/\s+/) 
 
     if cols.size < 2  # a list of VCF
       flag = 1
@@ -97,12 +102,7 @@ def readVCF(gt,samples,  vcf, switch)
       readVCF(gt, samples, cols[0], switch)
     else
       if line.match("^#CHROM")  # header of VCF
-        cols[9..-1].each do |cc|
-          cc = cc.sub(" ","_")
-          
-          sid << cc
-#        sid=cols[9..-1]
-        end
+        sid=cols[9..-1]
       else
         chr,pos,id,qual,filter,info, gtdetails = cols[0], cols[1].to_i, cols[2], cols[5].to_f, cols[6], cols[7], cols[9..-1]
         fclass = 0  # 0: synonymous; >0: non-syn
@@ -155,7 +155,7 @@ def readVCF(gt,samples,  vcf, switch)
 #            $stderr.puts line
             next unless samples.key?(sname)
             a = encodeGT(gtc[0])
-            next if a < 0 # missing value
+            # next if a < 0 # missing value
 #            gt[geneName][pos][sname] = a
             if samples[sname] < 0 # control
               snv[:controls][sname] = a
@@ -205,7 +205,6 @@ def getopt
                         ["--vcf", "-v", GetoptLong::REQUIRED_ARGUMENT],
                         ["--phenotype", "-p", GetoptLong::REQUIRED_ARGUMENT],
                         ["--inclusive", "-i", GetoptLong::NO_ARGUMENT],
-                        ["--output", "-o", GetoptLong::OPTIONAL_ARGUMENT],
                         ["--help", "-h", GetoptLong::NO_ARGUMENT]
                         )
   optHash = {}
@@ -214,7 +213,7 @@ def getopt
   end
   if optHash.key?("--help") or !optHash.key?("--vcf") or !optHash.key?("--phenotype")
     $stderr.puts "Usage: ruby __.rb -v VCF_or_list -p phenotype [-i]"
-    $stderr.puts " if -i is provided, both non-synonymous and synonymous variants will be considered"
+    $stderr.puts " if -n is provided, only non-synonymous variants will be considered"
     exit
   end
   return optHash

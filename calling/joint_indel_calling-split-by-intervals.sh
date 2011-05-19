@@ -1,23 +1,22 @@
 #!/bin/bash
 #$ -cwd
 
-nt=2 # default number of threads
+nt=1 # default number of threads
 dcov=300 # down sampling to dcov if depth is larger than dcov
 mbq=20 # min base qual 
 mmq=20 # min mapping qual
-njobs=900
-maxReads=500000
+njobs=100
 
-USAGE="Usage: $0 -i <list of bam files> -m <heap> -s <global setting> [ -n number_of_threads] [ -j number_of_qjobs] [-r maxNumberOfReads] [ -b min_base_qual] [ -q min_mapping_qual] [ -v total_mem ]"
+USAGE="Usage: $0 -i <list of bam files> -m <heap> -s <global setting> [ -n number_of_threads] [ -j number_of_qjobs] [-d down_sampling] [ -b min_base_qual] [ -q min_mapping_qual] [ -v total_mem ]"
 
-while getopts i:m:o:s:r:n:j:b:q:v:h opt
+while getopts i:m:o:s:d:n:j:b:q:v:h opt
   do 
   case "$opt" in
       i) bamlist="$OPTARG";;
       m) MEM="$OPTARG";;
       s) setting="$OPTARG";;  # global config
       n) nthreads="$OPTARG";;
-      r) maxReads="$OPTARG";;
+      d) dcov="$OPTARG";;
       j) njobs="$OPTARG";;
       b) mbq="$OPTARG";;
       q) mmq="$OPTARG";;
@@ -58,7 +57,7 @@ fi
 # fi
 
 bamlist=`readlink -e $bamlist`
-temp=$bamlist"_indelcall_dir"
+temp=$bamlist"_indel_dir"
 
 mkdir -p $temp
 
@@ -85,28 +84,21 @@ for (( j=1; j<=$njobs; j++ ))  #
   chrtarget=$out".targets.list" 
 
   let total=$total+$nslice
+
+  if [[ $j -eq $njobs ]]
+      then
+      let njobs=$njobs-1
+      let nslice=$num-$nslice*$njobs
+      let njobs=$njobs+1
+  fi
  
   head -${total} $target | tail -${nslice} > $chrtarget
 
   
   echo '#!/bin/bash'  > $out
   echo '#$ -cwd' >> $out
-
-#  java -jar /path/to/GenomeAnalysisTK.jar \
-#     -T IndelGenotyperV2 \
-#     -l INFO \
-#     -R reference.fasta \
-#     -I sequencing.data.bam \
-#     -bed my.brief.output.bed        \
-#     -verbose my.detailed.output.txt \
-#     -o my.output.vcf \
-#     --refseq /path/to/refseq.rod \
-#     -L chr1
-
-
-cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T IndelGenotyperV2 -R $REF -I $bamlist -bed $temp/indel.slice.$j.brief.bed -verbose $temp/indel.slice.$j.verbose.txt -o $temp/indel.slice.$j.vcf --refseq $REFSEQ -L $chrtarget --maxNumberOfReads ${maxReads}"
-
-#  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
+  echo 'uname -a' >> $out
+  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -glm DINDEL  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
   
   echo $cmd >> $out
   
