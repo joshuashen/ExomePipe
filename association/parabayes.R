@@ -36,10 +36,12 @@ dplikelihood <- function(gt)
 	# initial condition
 	numVar = nrow(gt)
 	
-	p = matrix(rep(1,(numVar+1)*(numVar+2)), nrow=numVar+2, ncol=numVar+1)
+	p = matrix(rep(0,(numVar+1)*(numVar+2)), nrow=numVar+2, ncol=numVar+1)
 	lratio = rep(0,numVar)
 	# loop through variants
-	p[1,] = 0 ## p(-1,) = 0
+    p[2,1] = 1 ## p(-1,) = 0
+	#p[3:(numVar+2),1] = 0
+ 	#p[1,1]=0
 	for (v in 1:numVar) 
 	{
 		vindex = v + 1
@@ -57,6 +59,7 @@ dplikelihood <- function(gt)
 	
 	## p[,numVar+2] is the final likelihood of each v
 
+	print(p[,numVar+1])
 	## maximum likelihood ratio:
 	for (d in 1:numVar)
 	{	dindex = d + 2
@@ -64,7 +67,7 @@ dplikelihood <- function(gt)
 	}
 	print(lratio)
 	### compute the posterior probability of data under alternative hypothesis (d>0)
-	
+	lratio
 
 }
 
@@ -81,7 +84,7 @@ palter <- function(gvector)
 	# depends on allele frequency: N(0,t),  t = 1/(p*(1-p))^0.5 / C, C is a scaling factor (C=20 seems reasonable)
 	
 	# make a vector containing OR and prior
-	c = 15  ## scaling factor for prior variantce of effect. 
+	c = 10  ## scaling factor for prior variantce of effect. 
 	### c=15 -> t(freq=0.1) = 0.22, which is close to the default value (0.2) of SNPTEST.
 	### c=10 -> t(freq=0.1) = 0.33
   
