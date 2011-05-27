@@ -6,17 +6,15 @@
 # Load all samples from chromosome in a single $INP vcf file
 
 
-HEAP=4000
+HEAP=4
 INP=""
 REF=""
-CHR=""
 
-USAGE="Usage: $0 -I <Input bam file> -R <Reference fasta> [-L \" #:#-#\"]"
+USAGE="Usage: $0 -I <Input VCF file> -g "
 
 while getopts I:t:m:g:h o
 do      case "$o" in
         I)      INP="$OPTARG";;
-        t)      TEMP="$OPTARG";;
         m)      MEM="$OPTARG";;
         g)      GLOBAL="$OPTARG";;
         h)      echo $USAGE
@@ -51,7 +49,7 @@ if [ ! -d $TEMP ];
 fi
 
 
-JAVA="java -Xmx${HEAP}m -Djava.io.tmpdir="${TEMP}
+JAVA="java -Xmx${HEAP}g -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
 
@@ -66,9 +64,9 @@ fi
 $GATK \
  -T VariantFiltration \
  -R $REF \
- -o $INP.snps.filtered.vcf \
- -B:variant,VCF $INP.snps.raw.vcf \
- -B:mask,Bed $INP.indels.mask.bed \
+ -o $INP.filtered.vcf \
+ -B:variant,VCF $INP \
+ -B:mask, VCF ${INDELS}
  --maskName InDel \
  --clusterWindowSize 10 \
  --filterExpression "QUAL < 30.0 || AB > 0.75 && DP > 40 || QD < 5.0 || HRun > 5 || SB > -0.10" \
@@ -76,5 +74,13 @@ $GATK \
  --filterExpression "MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1" \
  --filterName "HARD_TO_VALIDATE" 
 
-rm $INP.snps.raw.vcf.idx
-
+### java -jar /path/to/dist/GenomeAnalysisTK.jar \
+#  -T VariantFiltration \
+#  -R /seq/references/Homo_sapiens_assembly18/v0/Homo_sapiens_assembly18.fasta \
+#  -o /path/to/output.vcf \
+#  -B:variant,VCF /path/to/input.vcf \
+#  -B:mask,VCF /path/to/indels.calls.vcf \
+#  --maskName InDel \
+#  --clusterWindowSize 10 \
+#  --filterExpression "AB < 0.2 || MQ0 > 50" \
+#   --filterName "Nov09filters"
