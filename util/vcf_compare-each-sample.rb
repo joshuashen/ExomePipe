@@ -130,7 +130,8 @@ def readVCF(vcf, samples)
       chr,pos,id,qual,filter,info, gtdetails = cols[0], cols[1].to_i, cols[2], cols[5].to_f, cols[6], cols[7], cols[9..-1]
       fclass = 0  # 0: synonymous; >0: non-syn
       dbsnp = 1
-      
+      next if filter!= "PASS"
+
       info.split(';').each do  |item|
         k,v = item.split('=')[0..1]
         if k =~ /refseq.changesAA/

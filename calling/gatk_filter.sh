@@ -37,11 +37,11 @@ if [ ! $MEM == "" ]
 fi
 
 if [ $JOB_ID == "" ]; then
-    JOB_ID="SNPcalling"
+    JOB_ID="VarFilter"
 fi
 
 # JOB_ID is the qsub job ID
-TEMP=$TEMP"/"$JOB_ID"/"
+TEMP=$INP"_"$JOB_ID"/"
 
 if [ ! -d $TEMP ]; 
     then    
@@ -53,23 +53,23 @@ JAVA="java -Xmx${HEAP}g -Djava.io.tmpdir="${TEMP}
 GATK="$JAVA -jar "${GATKJAR}
 
 
-python $STING/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
+### python $STING/python/makeIndelMask.py $INP.indels.raw.bed 10 $INP.indels.mask.bed
 
-if [[ $? != 0 ]]
-then
-        echo "Variant filtration: MakeIndelMask FAILED"
-        exit 1
-fi
+##if [[ $? != 0 ]]
+#then
+#        echo "Variant filtration: MakeIndelMask FAILED"
+#        exit 1
+# fi
 
 $GATK \
  -T VariantFiltration \
  -R $REF \
  -o $INP.filtered.vcf \
  -B:variant,VCF $INP \
- -B:mask, VCF ${INDELS}
+ -B:mask,VCF ${INDELVCF} \
  --maskName InDel \
  --clusterWindowSize 10 \
- --filterExpression "QUAL < 30.0 || AB > 0.75 && DP > 40 || QD < 5.0 || HRun > 5 || SB > -0.10" \
+ --filterExpression "QUAL < 30.0 || QD < 5.0 || HRun > 5 || SB > -0.10" \
  --filterName "StandardFilters" \
  --filterExpression "MQ0 >= 4 && (MQ0 / (1.0 * DP)) > 0.1" \
  --filterName "HARD_TO_VALIDATE" 

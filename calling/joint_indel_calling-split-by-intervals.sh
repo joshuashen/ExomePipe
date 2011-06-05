@@ -98,11 +98,13 @@ for (( j=1; j<=$njobs; j++ ))  #
   echo '#!/bin/bash'  > $out
   echo '#$ -cwd' >> $out
   echo 'uname -a' >> $out
-  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -glm DINDEL  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
+##  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -glm DINDEL  -R $REF  -D $DBSNP  -nt ${nt} -o ${temp}/snv.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -mbq ${mbq}  -mmq ${mmq} -L $chrtarget -I $bamlist"
   
+  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF   -nt ${nt} -o ${temp}/indel.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -glm INDEL  -L $chrtarget -I $bamlist -metrics ${temp}/indel.slice.$j.raw.vcf.metrics -G Standard  -B:dbsnp,VCF ${DBSNPVCF}"
+
   echo $cmd >> $out
   
   
-  qsub -l mem=${qmem}G,time=60:: -o $temp/log.$j.o -e $temp/log.$j.e -N indel.$j.$bname $out 
+  qsub -l mem=${qmem}G,time=240:: -o $temp/log.$j.o -e $temp/log.$j.e -N indel.$j.$bname $out 
   # echo $qmem
 done

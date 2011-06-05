@@ -4,6 +4,7 @@
 # default values
 ref="/ifs/data/c2b2/ip_lab/shares/DATA/Sequencing/resources/human_g1k_v37.fasta"
 maxgaps=1
+maxeditdist=0.04
 qualtrim=5
 platform="illumina"
 threads=2
@@ -18,7 +19,7 @@ sortmem=1000000000  # mem allocated for samtools sort
 
 USAGE="Usage: $0 -r ref -i foo_1.fastq [ -p foo_2.fastq ] [ -g maxgaps] [ -q qualtrim ] [ -n sampleName] [ -f platform] [ -s global_setting ]"
 
-while getopts r:i:p:g:q:n:s:f:m:o:h opt
+while getopts r:i:p:g:q:d:n:s:f:m:o:h opt
   do      
   case "$opt" in
       r) ref="$OPTARG";;
@@ -26,6 +27,7 @@ while getopts r:i:p:g:q:n:s:f:m:o:h opt
       p) fastq2="$OPTARG";;
       m) sortmem="$OPTARG";;
       g) maxgaps="$OPTARG";;
+      d) maxeditdist="$OPTARG";;
       q) qualtrim="$OPTARG";;
       n) sampleName="$OPTARG";;
       f) platform="$OPTARG";;
@@ -49,9 +51,11 @@ fi
 
 
 ######### align step
-cmd="$bwa aln -q $qualtrim -o $maxgaps -t  $threads  $ref  $fastq1 > $fastq1.sai"
+#cmd="$bwa aln -q $qualtrim -o $maxgaps -t  $threads  $ref  $fastq1 > $fastq1.sai"
+
+cmd="$bwa aln -q $qualtrim -o $maxgaps -n $maxeditdist -t  $threads  $ref  $fastq1 > $fastq1.sai"
 echo $cmd
-$bwa aln -q $qualtrim -o $maxgaps -t  $threads  $ref  $fastq1 > $fastq1.sai
+$bwa aln -q $qualtrim -o $maxgaps -n $maxeditdist -t  $threads  $ref  $fastq1 > $fastq1.sai
 
 readgroup=`basename $fastq1 | sed 's/.fastq$//'  | sed s'/.txt$//'`
 if [[ $sampleName == "" ]]; then
@@ -64,9 +68,9 @@ fi
 
 
 if [[ ! $fastq2 == "" ]]; then  # paired-ends
-    cmd="$bwa aln -q $qualtrim -o $maxgaps -t  $threads  $ref  $fastq2 > $fastq2.sai"
+    cmd="$bwa aln -q $qualtrim -o $maxgaps  -n $maxeditdist -t  $threads  $ref  $fastq2 > $fastq2.sai"
     echo $cmd
-    $bwa aln -q $qualtrim -o $maxgaps -t  $threads  $ref  $fastq2 > $fastq2.sai
+    $bwa aln -q $qualtrim -o $maxgaps  -n $maxeditdist  -t  $threads  $ref  $fastq2 > $fastq2.sai
     
 # view -bS -o #{output} -
 
