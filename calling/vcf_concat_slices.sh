@@ -1,12 +1,15 @@
 #!/bin/bash
 #$ -cwd
 
-n=$1
+list=$1
 out=$2
 
-head -200 snv.slice.1.raw.vcf | egrep "^#" > $out
+first=`head -1 $list`
 
-for (( i=1; i<=$n; i++ ))
+head -200 $first | egrep "^#" > $out
+
+##for (( i=1; i<=$n; i++ ))
+for f in `cat $list`
   do 
-  egrep -v "^#" snv.slice.$i.raw.vcf >> $out
+  egrep -v "^#" $f >> $out
 done

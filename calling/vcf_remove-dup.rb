@@ -7,8 +7,8 @@ while line=ARGF.gets do
     puts line
   else
     cols = line.split(/\s+/)
-    chr,pos=cols[0], cols[1]
-    current = chr + ":" + pos
+    chr,pos,a1,a2=cols[0], cols[1], cols[3], cols[4]
+    current = [chr, pos, a1, a2].join(":")
 
     if current != last
       puts line

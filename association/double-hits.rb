@@ -4,6 +4,8 @@
 def main
   vcf=ARGV[0]
   
+  freqCutoff = 0.1
+
   sid=[]
   gt = []
   gene = {}
@@ -24,11 +26,19 @@ def main
     else  # normal line
       chr,pos,id,qual,filter,info, gt = cols[0], cols[1].to_i, cols[2], cols[5].to_f, cols[6], cols[7], cols[9..-1]
       flag = 0 
+      rare = 0
       functionclass = ""
       geneName = ""
       info.split(';').each do  |item|
         k,v = item.split('=')[0..1]
-        if k =~ /refseq.changesAA/
+        
+        if k == "AF" # allele freqency
+          if v.to_f < freqCutoff  ## 
+            rare = 1
+          else
+            break
+          end
+        elsif k =~ /refseq.changesAA/
           if v == "true"  # non-syn
             flag = 1
           end
@@ -45,7 +55,7 @@ def main
         end
       end
 #      $stderr.puts functionclass
-      if flag == 1 # non-syn
+      if rare == 1 and flag == 1 # non-syn and rare
         0.upto(gt.size-1) do |i|
           gtc = gt[i].split(':')
           sname = sid[i]

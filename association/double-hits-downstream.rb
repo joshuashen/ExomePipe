@@ -20,6 +20,7 @@ def parse(dhits, samples)
     next if ns == 0
     
     c1, c0 = 0, 0
+
     cols[2..-1].each do |info|
       sname = info.split(':')[0]
       if samples[:cases].key?(sname)  # a case
