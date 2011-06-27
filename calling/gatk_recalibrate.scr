@@ -64,6 +64,13 @@ fi
 
 Targets=$TEMP"/target.list"
 
+## dedup first
+
+$SAMTOOLS rmdup $INP $INP.temp
+mv $INP.temp $INP
+$SAMTOOLS index $INP
+
+
 $GATK \
     -R $REF \
     --DBSNP $DBSNP \
@@ -93,6 +100,7 @@ $GATK \
 
 
 $SAMTOOLS index $OUTPUT
+
 
 echo "recalibration complete"
 

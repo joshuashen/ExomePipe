@@ -15,11 +15,16 @@ end
 
 def readSamples(pheno)
   samples = {}
-  File.new(pheno, 'r').each do |line|
-    cols = line.chomp.split(/\s+/)
-    sid = cols[0]
-    samples[sid] = 1
+  if File.file?(pheno) # a file lists subjectNames
+    File.new(pheno, 'r').each do |line|
+      cols = line.chomp.split(/\s+/)
+      sid = cols[0]
+      samples[sid] = 1
+    end
+  else  # the string is the subjectName
+    samples[pheno.chomp] = 1
   end
+  
   return samples 
 end
 

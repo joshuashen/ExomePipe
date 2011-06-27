@@ -6,10 +6,15 @@ def main
   noveltv = 0
   knownti = 0
   knowntv = 0
-  
+
+
+  lastpos = -1 
   while line=ARGF.gets do 
+    next if line.match(/^\#/)
     cols=line.chomp.split(/\s+/)
-    name,ref,alt = cols[2],cols[3],cols[4]
+    pos,name,ref,alt = cols[1].to_i,cols[2],cols[3],cols[4]
+    next if ref.size != alt.size || pos == lastpos ## indels or same var
+    lastpos = pos
     ti = judge(ref,alt)
     if name =~ /^rs/  # known
       if ti == 1

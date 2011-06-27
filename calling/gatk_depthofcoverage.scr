@@ -27,7 +27,7 @@ do      case "$o" in
         esac
 done
 
-if [[ $INP == "" || $GLOBAL == "" || $TEMP == "" ]]
+if [[ $INP == "" || $GLOBAL == ""  ]]
 then
         echo $USAGE
         exit 1
@@ -46,7 +46,9 @@ if [ $JOB_ID == "" ]; then
     JOB_ID="depth"
 fi
 
-TEMP=$TEMP"/"$JOB_ID"/"
+if [[ $TEMP == "" ]]; then
+    TEMP=$INP"_depth_temp"
+fi
 
 if [ ! -d $TEMP ]; 
     then    
