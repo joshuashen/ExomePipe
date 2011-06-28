@@ -27,8 +27,15 @@ def compare(vcf, samples, codingSwitch)
   readthroughErr = 0
   missing = 0 
   totalCodinghomo = 0
+
+  qualbins = []
+  0.upto(10) do |i|
+    qualbins[i] = { :known => 0, :novel => 0 }
+  end
+
   
-  
+  novelHom = {}
+  novelHet = {}
   novelti = {}
   noveltv = {}
   knownti = {}
@@ -60,6 +67,9 @@ def compare(vcf, samples, codingSwitch)
         end
         i += 1
         sid << cc
+        novelHom[cc] = 0
+        novelHet[cc] = 0
+        
         novelti[cc] = 0
         noveltv[cc] = 0
         knownti[cc] = 0 
@@ -72,7 +82,7 @@ def compare(vcf, samples, codingSwitch)
         het[cc] = 0
       end
     else  # var lines
-      pos,name,ref,alt, passflag, info, gt = cols[1].to_i,cols[2],cols[3],cols[4], cols[6], cols[7], cols[9..-1]
+      pos,name,ref,alt, qual, passflag, info, gt = cols[1].to_i,cols[2],cols[3],cols[4], cols[5].to_f , cols[6], cols[7], cols[9..-1]
       next if ref.size != alt.size 
       next if passflag != "PASS"
       next if pos == lastpos 
@@ -127,18 +137,27 @@ def compare(vcf, samples, codingSwitch)
         end
       end
       
-      
+      binNum = qual.divmod(10)[0] ## 
+#      $stderr.puts binNum
+      if binNum > 10 
+        binNum = 10
+      end
+      qualbins[binNum][:known] += knownFlag
+      qualbins[binNum][:novel] += novelFlag      
       
       #      $stderr.puts gt
       i = 0 
       gt.each do |genotypeinfo|
         subject = sid[i]
         genotype = genotypeinfo.split(":")[0]
-        if genotype == '0/1' and coding > 0  ## het
+        if genotype == '0/1'  ## het
           het[subject] += 1
-          
-        elsif genotype == '1/1' and coding > 0 ## homo
+          novelHet[subject] += novelFlag
+
+        elsif genotype == '1/1' ## homo
+          novelHom[subject] += novelFlag
           homo[subject] += 1
+
         end
         
         if genotype == '0/1' or genotype == '1/1'
@@ -169,7 +188,7 @@ def compare(vcf, samples, codingSwitch)
           1
         elsif ogenotype == "1/1"   # only interested in the proband
           err  = 1
-          $stderr.puts line  ## need to investigate the depth coverage of these samples
+#          $stderr.puts line  ## need to investigate the depth coverage of these samples
         end
       end
 
@@ -201,8 +220,12 @@ def compare(vcf, samples, codingSwitch)
   puts "Number of coding/homozygous-non_ref SNVs in proband:\t#{totalCodinghomo}"
   
   puts "\n\n\#items\t#{sid.join("\t")}"
-  print "known:ti/tv"
-  sid.each {|s| print "\t#{knownti[s]}/#{knowntv[s]}"}
+  print "all variants"
+  sid.each {|s| print "\t#{knownti[s] + knowntv[s] + novelti[s] + noveltv[s]}"}
+  print "\n"
+
+  print "known variants"
+  sid.each {|s| print "\t#{knownti[s] + knowntv[s]}"}
   print "\n"
 
   print "known:ti/tv-ratio"
@@ -210,8 +233,8 @@ def compare(vcf, samples, codingSwitch)
   print "\n"
 
 
-  print "novel:ti/tv"
-  sid.each {|s| print "\t#{novelti[s]}/#{noveltv[s]}"}
+  print "novel variants"
+  sid.each {|s| print "\t#{novelti[s] + noveltv[s]}"}
   print "\n"
 
   print "novel:ti/tv-ratio"
@@ -237,10 +260,26 @@ def compare(vcf, samples, codingSwitch)
   print "homozygous"
   sid.each {|s| print "\t#{homo[s]}" }
   print "\n"
+  
+  print "homozygous novel"
+  sid.each {|s| print "\t#{novelHom[s]}" }
+  print "\n"
 
   print "heterozygous"
   sid.each {|s| print "\t#{het[s]}" }
   print "\n"
+
+  print "heterozygous novel"
+  sid.each {|s| print "\t#{novelHet[s]}" }
+  print "\n"
+
+  puts "quality bins (all subjects)"
+  0.upto(10) do |i|
+    bin = "#{10*i}-#{10*i + 9}"
+    puts "#{bin}\t#{qualbins[i][:known]}\t#{qualbins[i][:novel]}\t#{(qualbins[i][:novel].to_f/(qualbins[i][:known] + qualbins[i][:novel])).round(3)}"
+  end
+  
+    
 end
 
 def readFam(fam)
