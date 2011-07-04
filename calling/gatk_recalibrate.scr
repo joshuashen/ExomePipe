@@ -98,6 +98,11 @@ $GATK \
     -recalFile $INP.recal_data.csv \
     --out $OUTPUT
 
+### need to 
+## according to lh3 at http://biostar.stackexchange.com/questions/1269/what-is-the-best-pipeline-for-human-whole-exome-sequencing
+
+# $SAMTOOLS calmd -br $OUTPUT.temp $REF > $OUTPUT
+
 
 $SAMTOOLS index $OUTPUT
 

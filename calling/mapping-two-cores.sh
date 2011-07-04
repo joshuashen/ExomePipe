@@ -15,7 +15,7 @@ bwa=`which bwa`
 samtools=`which samtools`
 output=""
 bwaversion=`$bwa 2>&1 | grep Version | awk '{print $2""$3}'`
-sortmem=4000000000  # mem allocated for samtools sort  
+#sortmem=1000000000  # mem allocated for samtools sort  
 setting=""
 
 ### Note: bwa sample uses about 3.5G RAM
@@ -91,7 +91,9 @@ if [[ ! $fastq2 == "" ]]; then  # paired-ends
     echo $cmd
     $bwa sampe -r $rgheader  $REF $fastq1.sai $fastq2.sai $fastq1 $fastq2 | $samtools view -bS -  > $output.bam.temp
 
-    $samtools sort -m $sortmem  $output.bam.temp  $output
+    date
+    echo "bwa alignment complete. Sorting the bam file ..."
+    $samtools sort $output.bam.temp  $output
     rm -f $fastq1.sai $fastq2.sai $output.bam.temp
    
 else  # single-end
@@ -103,6 +105,10 @@ else  # single-end
     echo $cmd
     $bwa samse -r $rgheader $ref $fastq1.sai $fastq1 | $samtools view -bS - >  $output.bam.temp
 #    $samtools sort -m $sortmem  $output.bam.temp  $output
+    date
+    echo "bwa alignment complete. Sorting the bam file ..."
+    $samtools sort $output.bam.temp  $output
+   
     rm -f $fastq1.sai $output.bam.temp
 fi
 
