@@ -92,11 +92,12 @@ for (( j=1; j<=$njobs; j++ ))  #
  
   head -${total} $target | tail -${nslice} > $chrtarget
 
+  infofields="-A AlleleBalance  -A DepthOfCoverage  -A BaseQualityRankSumTest  -A HomopolymerRun -A MappingQualityRankSumTest -A MappingQualityZero -A QualByDepth  -A RMSMappingQuality  -A SpanningDeletions  -A HaplotypeScore "
   
   echo '#!/bin/bash'  > $out
   echo '#$ -cwd' >> $out
   echo 'uname -a' >> $out
-  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF   -nt ${nt} -o ${temp}/var.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -glm BOTH  -L $chrtarget -I $bamlist -metrics ${temp}/var.slice.$j.raw.vcf.metrics -G Standard  -B:dbsnp,VCF ${DBSNPVCF}"
+  cmd="java -Xmx${heap}g -Djava.io.tmpdir=${tempd}  -jar $GATKJAR -T UnifiedGenotyper  -R $REF   -nt ${nt} -o ${temp}/var.slice.$j.raw.vcf -stand_call_conf 50.0 -stand_emit_conf 10.0 -dcov ${dcov} -glm BOTH  -L $chrtarget -I $bamlist -metrics ${temp}/var.slice.$j.raw.vcf.metrics -G Standard  -B:dbsnp,VCF ${DBSNPVCF} -B:compdbSNP132,VCF $DBSNP132 $infofields"
   
   echo $cmd >> $out
   

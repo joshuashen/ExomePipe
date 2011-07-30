@@ -6,18 +6,15 @@ require 'getoptlong'
 
 def main
   optHash = getopt()
-  samples = readFam(optHash["--fam"])
-
+  
   if optHash.key?("--switch")  # codingswitch: 1 mean only consider coding var 
-    compare(optHash["--vcf"], samples, 1)
+    summary(optHash["--vcf"],-1)
   else
-    compare(optHash["--vcf"], samples, -1)
+    summary(optHash["--vcf"],1)
   end
 end
 
-def compare(vcf, samples, codingSwitch)
-  pidx, midx, oidx = nil, nil, nil
-
+def summary(vcf, codingSwitch)
 
   novelErr = 0
   knownErr = 0
@@ -58,13 +55,13 @@ def compare(vcf, samples, codingSwitch)
       i = 0
       cols[9..-1].each do |cc|
         cc = cc.sub(" ","_")
-        if samples[:p] == cc
-          pidx = i
-        elsif samples[:m] == cc
-          midx = i
-        elsif samples[:o] == cc
-          oidx = i
-        end
+#        if samples[:p] == cc
+#          pidx = i
+#        elsif samples[:m] == cc
+#          midx = i
+#        elsif samples[:o] == cc
+#          oidx = i
+#        end
         i += 1
         sid << cc
         novelHom[cc] = 0
@@ -173,52 +170,54 @@ def compare(vcf, samples, codingSwitch)
         i += 1
       end
 
-      pgt = gt[pidx]
+#      pgt = gt[pidx]
 #      mgt = gt[pidx] 
-      ogt = gt[oidx]
+#      ogt = gt[oidx]
 
-      pgenotype = pgt.split(":")[0]
-      ogenotype = ogt.split(":")[0]
+#      pgenotype = pgt.split(":")[0]
+#      ogenotype = ogt.split(":")[0]
 #      next if pgenotype == '0/1'  or ogenotype == "0/1"  #
       
-      if pgenotype != ogenotype 
-        if ogenotype == './.'  or pgenotype == './.' # 
-          missing += 1
-        elsif pgenotype == '0/1'  or ogenotype == "0/1"
-          1
-        elsif ogenotype == "1/1"   # only interested in the proband
-          err  = 1
+#      if pgenotype != ogenotype 
+#        if ogenotype == './.'  or pgenotype == './.' # 
+#          missing += 1
+#        elsif pgenotype == '0/1'  or ogenotype == "0/1"
+#          1
+#        elsif ogenotype == "1/1"   # only interested in the proband
+#          err  = 1
 #          $stderr.puts line  ## need to investigate the depth coverage of these samples
-        end
-      end
+#        end
+#      end
 
       
-      novelErr += novelFlag * err
-      knownErr +=  knownFlag * err
-      synonErr += synonFlag * err
-      missenseErr +=  missenseFlag * err
-      nonsenseErr += nonsenseFlag * err
-      readthroughErr += readthroughFlag * err
+#      novelErr += novelFlag * err
+#      knownErr +=  knownFlag * err
+#      synonErr += synonFlag * err
+#      missenseErr +=  missenseFlag * err
+#      nonsenseErr += nonsenseFlag * err
+#      readthroughErr += readthroughFlag * err
 
-      if ogenotype == "1/1" and coding > 0
-        totalCodinghomo += 1 
-      end
+#      if ogenotype == "1/1" and coding > 0
+#        totalCodinghomo += 1 
+#      end
       lastpos = pos
     end
     
   end
-  puts "Comparison b.t.w #{samples[:p]} (P) and #{samples[:o]} (O)"
-  puts "Total Mendelian errors:\t#{knownErr + novelErr}"
-  puts "Total Mendelian errors in coding:\t#{synonErr + missenseErr + nonsenseErr + readthroughErr}"
-  puts "Non-call in one subject:\t#{missing}"
-  puts "Mendelian errors in SNPs from dbSNP129:\t#{knownErr}"
-  puts "Mendelian errors in novel SNVs:\t#{novelErr}"
-  puts "Mendelian errors in synonymous SNVs:\t#{synonErr}"
-  puts "Mendelian errors in missense SNVs:\t#{missenseErr}"
-  puts "Mendelian errors in nonsense SNVs:\t#{nonsenseErr}"
-  puts "Mendelian errors in readthrough SNVs:\t#{readthroughErr}"
-  puts "Number of coding/homozygous-non_ref SNVs in proband:\t#{totalCodinghomo}"
-  
+
+#  puts "Comparison b.t.w #{samples[:p]} (P) and #{samples[:o]} (O)"
+#  puts "Total Mendelian errors:\t#{knownErr + novelErr}"
+#  puts "Total Mendelian errors in coding:\t#{synonErr + missenseErr + nonsenseErr + readthroughErr}"
+#  puts "Non-call in one subject:\t#{missing}"
+#  puts "Mendelian errors in SNPs from dbSNP129:\t#{knownErr}"
+#  puts "Mendelian errors in novel SNVs:\t#{novelErr}"
+#  puts "Mendelian errors in synonymous SNVs:\t#{synonErr}"
+#  puts "Mendelian errors in missense SNVs:\t#{missenseErr}"
+#  puts "Mendelian errors in nonsense SNVs:\t#{nonsenseErr}"
+#  puts "Mendelian errors in readthrough SNVs:\t#{readthroughErr}"
+#  puts "Number of coding/homozygous-non_ref SNVs in proband:\t#{totalCodinghomo}"
+ 
+## transpose the output matrix 
   puts "\n\n\#items\t#{sid.join("\t")}"
   print "all variants"
   sid.each {|s| print "\t#{knownti[s] + knowntv[s] + novelti[s] + noveltv[s]}"}
@@ -282,22 +281,6 @@ def compare(vcf, samples, codingSwitch)
     
 end
 
-def readFam(fam)
-  # for one-parent <-> offspring pair
-  samples = {:p => nil , :m => nil , :o => nil}
-  File.new(fam, "r").each do |line|
-    cols = line.chomp.split(/\s+/)
-    if cols[1] == "0" # maternal
-      samples[:m] = cols[0]
-    elsif cols[1] == "1"  # paternal
-      samples[:p] = cols[0]
-    elsif cols[1] == "2"  # offspring
-      samples[:o] = cols[0]
-    end
-  end
-  return samples
-end
-
 def judge(a1, a2)
   ti = 0
   if a1 == 'A'
@@ -324,7 +307,6 @@ end
 def getopt
   opts = GetoptLong.new(
                         ["--vcf", "-v", GetoptLong::REQUIRED_ARGUMENT],
-                        ["--fam", "-f", GetoptLong::REQUIRED_ARGUMENT],
                         ["--switch", "-s", GetoptLong::NO_ARGUMENT],
                         ["--help", "-h", GetoptLong::NO_ARGUMENT]
                         )
@@ -332,9 +314,9 @@ def getopt
   opts.each do |opt, arg|
     optHash[opt] = arg
   end
-  if optHash.key?("--help") or !optHash.key?("--vcf") or !optHash.key?("--fam")
-    $stderr.puts "Usage: ruby __.rb -v VCF_or_list -f fam [-s]"
-    $stderr.puts " if -s is provided, only consider coding sites"
+  if optHash.key?("--help") or !optHash.key?("--vcf") 
+    $stderr.puts "Usage: ruby __.rb -v VCF_or_list [ -s ]"
+    $stderr.puts " if -s is provided, only consider non-coding sites"
     exit
   end
   return optHash
